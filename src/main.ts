@@ -139,7 +139,13 @@ interface MapSizes {
 
 function calculateMapSizes(map: SourceMapJson, base?: MapSizes): MapSizes {
   const encoder = new TextEncoder();
-  const data = encoder.encode(JSON.stringify(map));
+  const data = encoder.encode(
+    JSON.stringify({
+      os: map.originalScopes,
+      gr: map.generatedRanges,
+      s: map.scopes,
+    }),
+  );
   const gzipData = gzip(data);
   const brotliData = compress(data);
 
