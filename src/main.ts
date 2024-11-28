@@ -7,6 +7,7 @@ import { gzip } from "jsr:@deno-library/compress";
 import { compress } from "https://deno.land/x/brotli/mod.ts";
 
 import { CODEC as ProposalCodec } from "./proposal/proposal.ts";
+import { CODEC as ProposalUnsignedCodec } from "./proposal_unsigned/proposal_unsigned.ts";
 import { CODEC as PrefixCodec } from "./prefix/prefix.ts";
 import { CODEC as PrefixUnsignedCodec } from "./prefix_unsigned/prefix_unsigned.ts";
 import { CODEC as RemainingCodec } from "./remaining/remaining.ts";
@@ -44,7 +45,7 @@ if (import.meta.main) {
       "tag-variables",
     ],
     string: ["sizes"],
-    default: { "sizes": "scopes" },
+    default: { sizes: "scopes" },
   });
 
   if (flags._.length === 0) {
@@ -56,7 +57,7 @@ if (import.meta.main) {
 
   const codecs: Codec[] = [];
   if (flags.proposal) {
-    codecs.push(ProposalCodec);
+    codecs.push(ProposalUnsignedCodec);
   }
   if (flags.prefix) {
     codecs.push(PrefixCodec);
@@ -96,11 +97,7 @@ if (import.meta.main) {
     const codecSizes = codecs.map((codec) => {
       const newMap = codec.encode(scopesInfo, map);
       if (flags.verify) verifyCodec(codec, map, newMap);
-      const sizes = calculateMapSizes(
-        newMap,
-        baseSizes,
-        filterSourceMapProps,
-      );
+      const sizes = calculateMapSizes(newMap, baseSizes, filterSourceMapProps);
       return { Codec: codec.name, ...formatMapSizes(sizes) };
     });
 
@@ -172,9 +169,9 @@ function calculateMapSizes(
   const encoder = new TextEncoder();
   const mapToStringify = props
     ? props.reduce((obj, key) => {
-      obj[key] = map[key];
-      return obj;
-    }, {} as any)
+        obj[key] = map[key];
+        return obj;
+      }, {} as any)
     : map;
   const data = encoder.encode(JSON.stringify(mapToStringify));
   const gzipData = gzip(data);

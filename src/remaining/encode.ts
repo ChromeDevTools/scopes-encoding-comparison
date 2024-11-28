@@ -124,7 +124,7 @@ export class OriginalScopeBuilder {
     }
 
     const encodedNumbers: MixedVlqList = [
-      lineDiff << 1,
+      [lineDiff << 1, "unsigned"],
       [column, "unsigned"],
       [flags, "unsigned"],
       ...nameIdxAndKindIdx,
@@ -215,10 +215,10 @@ export class GeneratedRangeBuilder {
     let emittedColumn = relativeColumn << 2;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      emittedNumbers.push(emittedColumn);
-      emittedNumbers.push(relativeLine);
+      emittedNumbers.push([emittedColumn, "unsigned"]);
+      emittedNumbers.push([relativeLine, "unsigned"]);
     } else {
-      emittedNumbers.push(emittedColumn);
+      emittedNumbers.push([emittedColumn, "unsigned"]);
     }
 
     this.#state.line = line;
@@ -317,10 +317,10 @@ export class GeneratedRangeBuilder {
     emittedColumn |= 0x2;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      emittedNumbers.push(emittedColumn);
-      emittedNumbers.push(relativeLine);
+      emittedNumbers.push([emittedColumn, "unsigned"]);
+      emittedNumbers.push([relativeLine, "unsigned"]);
     } else {
-      emittedNumbers.push(emittedColumn);
+      emittedNumbers.push([emittedColumn, "unsigned"]);
     }
 
     this.#state.line = line;

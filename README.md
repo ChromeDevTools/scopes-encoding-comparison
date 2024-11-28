@@ -48,11 +48,12 @@ The examples are:
 ## Results
 
 ```
-deno task all
-Task all deno -R src/main.ts --prefix --remaining --tag-split --tag-combined ./examples/simple.min.js.map ./examples/common.min.js.map ./examples/sdk.min.js.map ./examples/typescript.min.js.map
-
+Task all deno -R src/main.ts --proposal --prefix --remaining --tag-split --tag-combined --tag-variables ./examples/simple.min.js.map ./examples/common.min.js.map ./examples/sdk.min.js.map ./examples/typescript.min.js.map
 Name:         Proposal
 Description:  The currently proposed "Scopes" (stage 3) encoding
+
+Name:         Proposal (unsigned)
+Description:  The currently proposed "Scopes" (stage 3) encoding.  Use unsigned VLQ where appropriate.
 
 Name:         Prefix (Option A)
 Description:  Prefix start/end items with their length
@@ -89,56 +90,60 @@ Description:  Prefix original/generated items with a tag and their length. Combi
 ├───────┼────────────────────────────────────┼───────────────────────────────────────────────────┼───────────────────┼───────────┼────────────────────────┼───────────┼──────────────────────────┼───────────┤
 │     0 │ "./examples/simple.min.js.map"     │                                                   │                   │           │                        │           │                          │           │
 │     1 │                                    │ "Proposal"                                        │ "171"             │ ""        │ "137"                  │ ""        │ "105"                    │ ""        │
-│     2 │                                    │ "Prefix (Option A)"                               │ "186"             │ "+8.77%"  │ "141"                  │ "+2.92%"  │ "115"                    │ "+9.52%"  │
-│     3 │                                    │ "Prefix (Option A, unsigned)"                     │ "182"             │ "+6.43%"  │ "138"                  │ "+0.73%"  │ "109"                    │ "+3.81%"  │
-│     4 │                                    │ "Remaining (Option B)"                            │ "162"             │ "-5.26%"  │ "133"                  │ "-2.92%"  │ "107"                    │ "+1.9%"   │
-│     5 │                                    │ "Remaining (Option B, unsigned)"                  │ "158"             │ "-7.6%"   │ "130"                  │ "-5.11%"  │ "101"                    │ "-3.81%"  │
-│     6 │                                    │ "Tag-Value-Length Split (Option C)"               │ "170"             │ "-0.58%"  │ "120"                  │ "-12.41%" │ "98"                     │ "-6.67%"  │
-│     7 │                                    │ "Tag-Value-Length Split (Option C, unsigned)"     │ "166"             │ "-2.92%"  │ "115"                  │ "-16.06%" │ "93"                     │ "-11.43%" │
-│     8 │                                    │ "Tag-Value-Length Combined (Option D)"            │ "158"             │ "-7.6%"   │ "114"                  │ "-16.79%" │ "95"                     │ "-9.52%"  │
-│     9 │                                    │ "Tag-Value-Length Combined (Option D, unsigned)"  │ "154"             │ "-9.94%"  │ "109"                  │ "-20.44%" │ "90"                     │ "-14.29%" │
-│    10 │                                    │ "Tag-Value-Length Variables (Option E)"           │ "178"             │ "+4.09%"  │ "118"                  │ "-13.87%" │ "102"                    │ "-2.86%"  │
-│    11 │                                    │ "Tag-Value-Length Variables (Option E, unsigned)" │ "174"             │ "+1.75%"  │ "112"                  │ "-18.25%" │ "90"                     │ "-14.29%" │
-│    12 │                                    │                                                   │                   │           │                        │           │                          │           │
-│    13 │ "./examples/common.min.js.map"     │                                                   │                   │           │                        │           │                          │           │
-│    14 │                                    │ "Proposal"                                        │ "35,052"          │ ""        │ "10,517"               │ ""        │ "10,396"                 │ ""        │
-│    15 │                                    │ "Prefix (Option A)"                               │ "38,510"          │ "+9.87%"  │ "11,940"               │ "+13.53%" │ "11,561"                 │ "+11.21%" │
-│    16 │                                    │ "Prefix (Option A, unsigned)"                     │ "37,521"          │ "+7.04%"  │ "11,768"               │ "+11.9%"  │ "11,375"                 │ "+9.42%"  │
-│    17 │                                    │ "Remaining (Option B)"                            │ "32,699"          │ "-6.71%"  │ "10,785"               │ "+2.55%"  │ "10,652"                 │ "+2.46%"  │
-│    18 │                                    │ "Remaining (Option B, unsigned)"                  │ "31,728"          │ "-9.48%"  │ "10,621"               │ "+0.99%"  │ "10,511"                 │ "+1.11%"  │
-│    19 │                                    │ "Tag-Value-Length Split (Option C)"               │ "42,997"          │ "+22.67%" │ "12,296"               │ "+16.92%" │ "11,906"                 │ "+14.52%" │
-│    20 │                                    │ "Tag-Value-Length Split (Option C, unsigned)"     │ "42,011"          │ "+19.85%" │ "12,144"               │ "+15.47%" │ "11,722"                 │ "+12.75%" │
-│    21 │                                    │ "Tag-Value-Length Combined (Option D)"            │ "39,996"          │ "+14.1%"  │ "11,728"               │ "+11.51%" │ "11,358"                 │ "+9.25%"  │
-│    22 │                                    │ "Tag-Value-Length Combined (Option D, unsigned)"  │ "38,997"          │ "+11.25%" │ "11,540"               │ "+9.73%"  │ "11,156"                 │ "+7.31%"  │
-│    23 │                                    │ "Tag-Value-Length Variables (Option E)"           │ "44,338"          │ "+26.49%" │ "11,529"               │ "+9.62%"  │ "11,295"                 │ "+8.65%"  │
-│    24 │                                    │ "Tag-Value-Length Variables (Option E, unsigned)" │ "43,367"          │ "+23.72%" │ "11,373"               │ "+8.14%"  │ "11,171"                 │ "+7.45%"  │
-│    25 │                                    │                                                   │                   │           │                        │           │                          │           │
-│    26 │ "./examples/sdk.min.js.map"        │                                                   │                   │           │                        │           │                          │           │
-│    27 │                                    │ "Proposal"                                        │ "156,978"         │ ""        │ "48,204"               │ ""        │ "47,504"                 │ ""        │
-│    28 │                                    │ "Prefix (Option A)"                               │ "171,191"         │ "+9.05%"  │ "53,802"               │ "+11.61%" │ "52,406"                 │ "+10.32%" │
-│    29 │                                    │ "Prefix (Option A, unsigned)"                     │ "167,516"         │ "+6.71%"  │ "53,309"               │ "+10.59%" │ "51,787"                 │ "+9.02%"  │
-│    30 │                                    │ "Remaining (Option B)"                            │ "146,778"         │ "-6.5%"   │ "49,367"               │ "+2.41%"  │ "48,772"                 │ "+2.67%"  │
-│    31 │                                    │ "Remaining (Option B, unsigned)"                  │ "143,159"         │ "-8.8%"   │ "48,930"               │ "+1.51%"  │ "48,402"                 │ "+1.89%"  │
-│    32 │                                    │ "Tag-Value-Length Split (Option C)"               │ "190,214"         │ "+21.17%" │ "55,623"               │ "+15.39%" │ "53,853"                 │ "+13.37%" │
-│    33 │                                    │ "Tag-Value-Length Split (Option C, unsigned)"     │ "186,550"         │ "+18.84%" │ "55,232"               │ "+14.58%" │ "53,300"                 │ "+12.2%"  │
-│    34 │                                    │ "Tag-Value-Length Combined (Option D)"            │ "177,542"         │ "+13.1%"  │ "53,155"               │ "+10.27%" │ "51,862"                 │ "+9.17%"  │
-│    35 │                                    │ "Tag-Value-Length Combined (Option D, unsigned)"  │ "173,841"         │ "+10.74%" │ "52,663"               │ "+9.25%"  │ "51,341"                 │ "+8.08%"  │
-│    36 │                                    │ "Tag-Value-Length Variables (Option E)"           │ "195,163"         │ "+24.33%" │ "52,326"               │ "+8.55%"  │ "51,404"                 │ "+8.21%"  │
-│    37 │                                    │ "Tag-Value-Length Variables (Option E, unsigned)" │ "191,530"         │ "+22.01%" │ "51,935"               │ "+7.74%"  │ "50,992"                 │ "+7.34%"  │
-│    38 │                                    │                                                   │                   │           │                        │           │                          │           │
-│    39 │ "./examples/typescript.min.js.map" │                                                   │                   │           │                        │           │                          │           │
-│    40 │                                    │ "Proposal"                                        │ "1,252,432"       │ ""        │ "430,113"              │ ""        │ "403,558"                │ ""        │
-│    41 │                                    │ "Prefix (Option A)"                               │ "1,353,045"       │ "+8.03%"  │ "478,734"              │ "+11.3%"  │ "443,350"                │ "+9.86%"  │
-│    42 │                                    │ "Prefix (Option A, unsigned)"                     │ "1,323,441"       │ "+5.67%"  │ "474,601"              │ "+10.34%" │ "438,660"                │ "+8.7%"   │
-│    43 │                                    │ "Remaining (Option B)"                            │ "1,188,897"       │ "-5.07%"  │ "439,974"              │ "+2.29%"  │ "415,369"                │ "+2.93%"  │
-│    44 │                                    │ "Remaining (Option B, unsigned)"                  │ "1,160,192"       │ "-7.36%"  │ "438,958"              │ "+2.06%"  │ "410,957"                │ "+1.83%"  │
-│    45 │                                    │ "Tag-Value-Length Split (Option C)"               │ "1,486,771"       │ "+18.71%" │ "492,393"              │ "+14.48%" │ "455,698"                │ "+12.92%" │
-│    46 │                                    │ "Tag-Value-Length Split (Option C, unsigned)"     │ "1,457,288"       │ "+16.36%" │ "489,613"              │ "+13.83%" │ "450,108"                │ "+11.53%" │
-│    47 │                                    │ "Tag-Value-Length Combined (Option D)"            │ "1,398,060"       │ "+11.63%" │ "478,567"              │ "+11.27%" │ "444,569"                │ "+10.16%" │
-│    48 │                                    │ "Tag-Value-Length Combined (Option D, unsigned)"  │ "1,368,049"       │ "+9.23%"  │ "476,179"              │ "+10.71%" │ "439,998"                │ "+9.03%"  │
-│    49 │                                    │ "Tag-Value-Length Variables (Option E)"           │ "1,482,862"       │ "+18.4%"  │ "468,598"              │ "+8.95%"  │ "438,430"                │ "+8.64%"  │
-│    50 │                                    │ "Tag-Value-Length Variables (Option E, unsigned)" │ "1,453,866"       │ "+16.08%" │ "464,231"              │ "+7.93%"  │ "433,530"                │ "+7.43%"  │
-│    51 │                                    │                                                   │                   │           │                        │           │                          │           │
+│     2 │                                    │ "Proposal (unsigned)"                             │ "163"             │ "-4.68%"  │ "129"                  │ "-5.84%"  │ "100"                    │ "-4.76%"  │
+│     3 │                                    │ "Prefix (Option A)"                               │ "186"             │ "+8.77%"  │ "141"                  │ "+2.92%"  │ "115"                    │ "+9.52%"  │
+│     4 │                                    │ "Prefix (Option A, unsigned)"                     │ "182"             │ "+6.43%"  │ "138"                  │ "+0.73%"  │ "109"                    │ "+3.81%"  │
+│     5 │                                    │ "Remaining (Option B)"                            │ "156"             │ "-8.77%"  │ "127"                  │ "-7.3%"   │ "105"                    │ "+0%"     │
+│     6 │                                    │ "Remaining (Option B, unsigned)"                  │ "152"             │ "-11.11%" │ "126"                  │ "-8.03%"  │ "98"                     │ "-6.67%"  │
+│     7 │                                    │ "Tag-Value-Length Split (Option C)"               │ "170"             │ "-0.58%"  │ "120"                  │ "-12.41%" │ "98"                     │ "-6.67%"  │
+│     8 │                                    │ "Tag-Value-Length Split (Option C, unsigned)"     │ "166"             │ "-2.92%"  │ "112"                  │ "-18.25%" │ "93"                     │ "-11.43%" │
+│     9 │                                    │ "Tag-Value-Length Combined (Option D)"            │ "158"             │ "-7.6%"   │ "114"                  │ "-16.79%" │ "95"                     │ "-9.52%"  │
+│    10 │                                    │ "Tag-Value-Length Combined (Option D, unsigned)"  │ "154"             │ "-9.94%"  │ "108"                  │ "-21.17%" │ "91"                     │ "-13.33%" │
+│    11 │                                    │ "Tag-Value-Length Variables (Option E)"           │ "178"             │ "+4.09%"  │ "118"                  │ "-13.87%" │ "102"                    │ "-2.86%"  │
+│    12 │                                    │ "Tag-Value-Length Variables (Option E, unsigned)" │ "174"             │ "+1.75%"  │ "114"                  │ "-16.79%" │ "93"                     │ "-11.43%" │
+│    13 │                                    │                                                   │                   │           │                        │           │                          │           │
+│    14 │ "./examples/common.min.js.map"     │                                                   │                   │           │                        │           │                          │           │
+│    15 │                                    │ "Proposal"                                        │ "35,050"          │ ""        │ "10,509"               │ ""        │ "10,391"                 │ ""        │
+│    16 │                                    │ "Proposal (unsigned)"                             │ "34,101"          │ "-2.71%"  │ "10,397"               │ "-1.07%"  │ "10,248"                 │ "-1.38%"  │
+│    17 │                                    │ "Prefix (Option A)"                               │ "38,509"          │ "+9.87%"  │ "11,937"               │ "+13.59%" │ "11,556"                 │ "+11.21%" │
+│    18 │                                    │ "Prefix (Option A, unsigned)"                     │ "37,520"          │ "+7.05%"  │ "11,767"               │ "+11.97%" │ "11,376"                 │ "+9.48%"  │
+│    19 │                                    │ "Remaining (Option B)"                            │ "31,779"          │ "-9.33%"  │ "9,723"                │ "-7.48%"  │ "9,589"                  │ "-7.72%"  │
+│    20 │                                    │ "Remaining (Option B, unsigned)"                  │ "30,652"          │ "-12.55%" │ "9,500"                │ "-9.6%"   │ "9,381"                  │ "-9.72%"  │
+│    21 │                                    │ "Tag-Value-Length Split (Option C)"               │ "42,996"          │ "+22.67%" │ "12,286"               │ "+16.91%" │ "11,902"                 │ "+14.54%" │
+│    22 │                                    │ "Tag-Value-Length Split (Option C, unsigned)"     │ "41,575"          │ "+18.62%" │ "12,092"               │ "+15.06%" │ "11,643"                 │ "+12.05%" │
+│    23 │                                    │ "Tag-Value-Length Combined (Option D)"            │ "39,995"          │ "+14.11%" │ "11,722"               │ "+11.54%" │ "11,349"                 │ "+9.22%"  │
+│    24 │                                    │ "Tag-Value-Length Combined (Option D, unsigned)"  │ "38,561"          │ "+10.02%" │ "11,467"               │ "+9.12%"  │ "11,072"                 │ "+6.55%"  │
+│    25 │                                    │ "Tag-Value-Length Variables (Option E)"           │ "44,337"          │ "+26.5%"  │ "11,519"               │ "+9.61%"  │ "11,278"                 │ "+8.54%"  │
+│    26 │                                    │ "Tag-Value-Length Variables (Option E, unsigned)" │ "42,931"          │ "+22.49%" │ "11,279"               │ "+7.33%"  │ "11,058"                 │ "+6.42%"  │
+│    27 │                                    │                                                   │                   │           │                        │           │                          │           │
+│    28 │ "./examples/sdk.min.js.map"        │                                                   │                   │           │                        │           │                          │           │
+│    29 │                                    │ "Proposal"                                        │ "156,976"         │ ""        │ "48,207"               │ ""        │ "47,532"                 │ ""        │
+│    30 │                                    │ "Proposal (unsigned)"                             │ "152,697"         │ "-2.73%"  │ "47,783"               │ "-0.88%"  │ "47,090"                 │ "-0.93%"  │
+│    31 │                                    │ "Prefix (Option A)"                               │ "171,193"         │ "+9.06%"  │ "53,815"               │ "+11.63%" │ "52,420"                 │ "+10.28%" │
+│    32 │                                    │ "Prefix (Option A, unsigned)"                     │ "167,518"         │ "+6.72%"  │ "53,321"               │ "+10.61%" │ "51,796"                 │ "+8.97%"  │
+│    33 │                                    │ "Remaining (Option B)"                            │ "143,221"         │ "-8.76%"  │ "44,695"               │ "-7.29%"  │ "44,080"                 │ "-7.26%"  │
+│    34 │                                    │ "Remaining (Option B, unsigned)"                  │ "139,003"         │ "-11.45%" │ "43,936"               │ "-8.86%"  │ "43,432"                 │ "-8.63%"  │
+│    35 │                                    │ "Tag-Value-Length Split (Option C)"               │ "190,216"         │ "+21.18%" │ "55,643"               │ "+15.43%" │ "53,871"                 │ "+13.34%" │
+│    36 │                                    │ "Tag-Value-Length Split (Option C, unsigned)"     │ "185,053"         │ "+17.89%" │ "54,927"               │ "+13.94%" │ "52,892"                 │ "+11.28%" │
+│    37 │                                    │ "Tag-Value-Length Combined (Option D)"            │ "177,544"         │ "+13.1%"  │ "53,171"               │ "+10.3%"  │ "51,868"                 │ "+9.12%"  │
+│    38 │                                    │ "Tag-Value-Length Combined (Option D, unsigned)"  │ "172,344"         │ "+9.79%"  │ "52,249"               │ "+8.38%"  │ "50,924"                 │ "+7.14%"  │
+│    39 │                                    │ "Tag-Value-Length Variables (Option E)"           │ "195,165"         │ "+24.33%" │ "52,338"               │ "+8.57%"  │ "51,417"                 │ "+8.17%"  │
+│    40 │                                    │ "Tag-Value-Length Variables (Option E, unsigned)" │ "190,033"         │ "+21.06%" │ "51,474"               │ "+6.78%"  │ "50,652"                 │ "+6.56%"  │
+│    41 │                                    │                                                   │                   │           │                        │           │                          │           │
+│    42 │ "./examples/typescript.min.js.map" │                                                   │                   │           │                        │           │                          │           │
+│    43 │                                    │ "Proposal"                                        │ "1,252,403"       │ ""        │ "430,028"              │ ""        │ "403,591"                │ ""        │
+│    44 │                                    │ "Proposal (unsigned)"                             │ "1,225,816"       │ "-2.12%"  │ "428,333"              │ "-0.39%"  │ "402,369"                │ "-0.3%"   │
+│    45 │                                    │ "Prefix (Option A)"                               │ "1,353,031"       │ "+8.03%"  │ "478,656"              │ "+11.31%" │ "443,284"                │ "+9.83%"  │
+│    46 │                                    │ "Prefix (Option A, unsigned)"                     │ "1,323,427"       │ "+5.67%"  │ "474,539"              │ "+10.35%" │ "438,366"                │ "+8.62%"  │
+│    47 │                                    │ "Remaining (Option B)"                            │ "1,147,147"       │ "-8.4%"   │ "388,148"              │ "-9.74%"  │ "367,372"                │ "-8.97%"  │
+│    48 │                                    │ "Remaining (Option B, unsigned)"                  │ "1,110,878"       │ "-11.3%"  │ "384,033"              │ "-10.7%"  │ "362,182"                │ "-10.26%" │
+│    49 │                                    │ "Tag-Value-Length Split (Option C)"               │ "1,486,757"       │ "+18.71%" │ "492,316"              │ "+14.48%" │ "455,141"                │ "+12.77%" │
+│    50 │                                    │ "Tag-Value-Length Split (Option C, unsigned)"     │ "1,446,601"       │ "+15.51%" │ "486,669"              │ "+13.17%" │ "447,178"                │ "+10.8%"  │
+│    51 │                                    │ "Tag-Value-Length Combined (Option D)"            │ "1,398,046"       │ "+11.63%" │ "478,498"              │ "+11.27%" │ "444,834"                │ "+10.22%" │
+│    52 │                                    │ "Tag-Value-Length Combined (Option D, unsigned)"  │ "1,357,362"       │ "+8.38%"  │ "472,643"              │ "+9.91%"  │ "436,932"                │ "+8.26%"  │
+│    53 │                                    │ "Tag-Value-Length Variables (Option E)"           │ "1,482,848"       │ "+18.4%"  │ "468,544"              │ "+8.96%"  │ "438,556"                │ "+8.66%"  │
+│    54 │                                    │ "Tag-Value-Length Variables (Option E, unsigned)" │ "1,443,179"       │ "+15.23%" │ "460,949"              │ "+7.19%"  │ "430,827"                │ "+6.75%"  │
+│    55 │                                    │                                                   │                   │           │                        │           │                          │           │
 └───────┴────────────────────────────────────┴───────────────────────────────────────────────────┴───────────────────┴───────────┴────────────────────────┴───────────┴──────────────────────────┴───────────┘
 ```
 

@@ -190,7 +190,7 @@ function* decodeScopeItem(encodedScopes: string): Generator<Item> {
   while (iter.hasNext()) {
     const [tag, _count] = [iter.nextUnsignedVLQ(), iter.nextUnsignedVLQ()];
     if (tag === Tag.ORIGINAL_START) {
-      const [line, column] = [iter.nextVLQ(), iter.nextUnsignedVLQ()];
+      const [line, column] = [iter.nextUnsignedVLQ(), iter.nextUnsignedVLQ()];
 
       const startItem: Item = {
         tag,
@@ -215,12 +215,12 @@ function* decodeScopeItem(encodedScopes: string): Generator<Item> {
 
       yield startItem;
     } else if (tag === Tag.ORIGINAL_END) {
-      const [line, column] = [iter.nextVLQ(), iter.nextUnsignedVLQ()];
+      const [line, column] = [iter.nextUnsignedVLQ(), iter.nextUnsignedVLQ()];
       yield { tag, line, column };
     } else if (tag === Tag.GENERATED_START) {
-      const emittedColumn = iter.nextVLQ();
+      const emittedColumn = iter.nextUnsignedVLQ();
       const line = generatedState.line +
-        (emittedColumn & 0x1 ? iter.nextVLQ() : 0);
+        (emittedColumn & 0x1 ? iter.nextUnsignedVLQ() : 0);
       generatedState.column = (emittedColumn >> 1) +
         (line === generatedState.line ? generatedState.column : 0);
       generatedState.line = line;
@@ -296,9 +296,9 @@ function* decodeScopeItem(encodedScopes: string): Generator<Item> {
 
       yield startItem;
     } else if (tag === Tag.GENERATED_END) {
-      const emittedColumn = iter.nextVLQ();
+      const emittedColumn = iter.nextUnsignedVLQ();
       const line = generatedState.line +
-        (emittedColumn & 0x1 ? iter.nextVLQ() : 0);
+        (emittedColumn & 0x1 ? iter.nextUnsignedVLQ() : 0);
       generatedState.column = (emittedColumn >> 1) +
         (line === generatedState.line ? generatedState.column : 0);
       generatedState.line = line;

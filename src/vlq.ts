@@ -60,7 +60,7 @@ function encodeUnsignedVlqInternal(n: number): string {
   while (true) {
     // Extract the lowest 5 bits and remove them from the number.
     const digit = n & 0x1f;
-    n >>= 5;
+    n >>>= 5;
     // Is there anything more left to encode?
     if (n === 0) {
       // We are done encoding, finish the run.
@@ -124,7 +124,7 @@ export class TokenIterator {
 
     // Fix the sign.
     const negative = result & 1;
-    result >>= 1;
+    result >>>= 1;
     return negative ? -result : result;
   }
 

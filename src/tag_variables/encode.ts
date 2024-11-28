@@ -141,9 +141,9 @@ class Builder {
     }
 
     const encodedNumbers: MixedVlqList = [
-      startLineDelta,
+      [startLineDelta, "unsigned"],
       [start.column, "unsigned"],
-      endLineDelta,
+      [endLineDelta, "unsigned"],
       [end.column, "unsigned"],
       [flags, "unsigned"],
       ...nameIdxAndKindIdx,
@@ -202,10 +202,10 @@ class Builder {
     let emittedColumn = relativeColumn << 1;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      emittedNumbers.push(emittedColumn);
-      emittedNumbers.push(relativeLine);
+      emittedNumbers.push([emittedColumn, "unsigned"]);
+      emittedNumbers.push([relativeLine, "unsigned"]);
     } else {
-      emittedNumbers.push(emittedColumn);
+      emittedNumbers.push([emittedColumn, "unsigned"]);
     }
 
     const relativeEndLine = end.line -
@@ -217,9 +217,12 @@ class Builder {
     let emittedEndColumn = relativeEndColumn << 1;
     if (relativeEndLine !== 0) {
       emittedEndColumn |= 0x1;
-      emittedNumbers.push(emittedEndColumn, relativeEndLine);
+      emittedNumbers.push(
+        [emittedEndColumn, "unsigned"],
+        [relativeEndLine, "unsigned"],
+      );
     } else {
-      emittedNumbers.push(emittedEndColumn);
+      emittedNumbers.push([emittedEndColumn, "unsigned"]);
     }
 
     this.#generatedState.line = start.line;

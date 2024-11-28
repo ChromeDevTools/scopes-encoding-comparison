@@ -9,7 +9,7 @@ import {
   ScopeInfo,
   SourceMapJson,
 } from "../types.ts";
-import { encodeVlq, encodeVlqList } from "../vlq.ts";
+import { encodeVlq, encodeMixedVlqList } from "../vlq.ts";
 
 /**
  * Takes a SourceMap with "current proposal" scopes and re-encodes them using the "prefix" method.
@@ -130,15 +130,15 @@ export class OriginalScopeBuilder {
       flags |= 0x4;
     }
 
-    this.#encodedScope += encodeVlqList([
-      lineDiff,
-      column,
-      flags,
+    this.#encodedScope += encodeMixedVlqList([
+      [lineDiff, "unsigned"],
+      [column, "unsigned"],
+      [flags, "unsigned"],
       ...nameIdxAndKindIdx,
     ]);
 
     if (options?.variables) {
-      this.#encodedScope += encodeVlqList(
+      this.#encodedScope += encodeMixedVlqList(
         options.variables.map((variable) => this.#nameIdx(variable)),
       );
     }
@@ -155,7 +155,10 @@ export class OriginalScopeBuilder {
 
     const lineDiff = line - this.#lastLine;
     this.#lastLine = line;
-    this.#encodedScope += encodeVlqList([lineDiff, column]);
+    this.#encodedScope += encodeMixedVlqList([
+      [lineDiff, "unsigned"],
+      [column, "unsigned"],
+    ]);
     this.#scopeCounter++;
 
     return this;
@@ -216,7 +219,9 @@ export class GeneratedRangeBuilder {
 
     const emittedColumn = column -
       (this.#state.line === line ? this.#state.column : 0);
-    this.#encodedRange += encodeVlq(emittedColumn);
+    this.#encodedRange += encodeMixedVlqList([
+      [emittedColumn, "unsigned"],
+    ]);
 
     this.#state.line = line;
     this.#state.column = column;
@@ -234,7 +239,9 @@ export class GeneratedRangeBuilder {
     if (options?.isHidden) {
       flags |= 0x8;
     }
-    this.#encodedRange += encodeVlq(flags);
+    this.#encodedRange += encodeMixedVlqList([
+      [flags, "unsigned"],
+    ]);
 
     if (options?.definition) {
       const { sourceIdx, scopeIdx } = options.definition;
@@ -307,7 +314,9 @@ export class GeneratedRangeBuilder {
 
     const emittedColumn = column -
       (this.#state.line === line ? this.#state.column : 0);
-    this.#encodedRange += encodeVlq(emittedColumn);
+    this.#encodedRange += encodeMixedVlqList([
+      [emittedColumn, "unsigned"],
+    ]);
 
     this.#state.line = line;
     this.#state.column = column;

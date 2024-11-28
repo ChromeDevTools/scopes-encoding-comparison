@@ -134,7 +134,7 @@ class Builder {
     }
 
     const encodedNumbers: MixedVlqList = [
-      lineDiff,
+      [lineDiff, "unsigned"],
       [column, "unsigned"],
       [flags, "unsigned"],
       ...nameIdxAndKindIdx,
@@ -163,7 +163,7 @@ class Builder {
     this.#encodedScope += encodeMixedVlqList([
       [Tag.ORIGINAL_END, "unsigned"],
       [2, "unsigned"],
-      lineDiff,
+      [lineDiff, "unsigned"],
       [column, "unsigned"],
     ]);
     this.#itemCounter++;
@@ -186,10 +186,10 @@ class Builder {
     let emittedColumn = relativeColumn << 1;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      emittedNumbers.push(emittedColumn);
-      emittedNumbers.push(relativeLine);
+      emittedNumbers.push([emittedColumn, "unsigned"]);
+      emittedNumbers.push([relativeLine, "unsigned"]);
     } else {
-      emittedNumbers.push(emittedColumn);
+      emittedNumbers.push([emittedColumn, "unsigned"]);
     }
 
     this.#generatedState.line = line;
@@ -286,10 +286,10 @@ class Builder {
     let emittedColumn = relativeColumn << 1;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      emittedNumbers.push(emittedColumn);
-      emittedNumbers.push(relativeLine);
+      emittedNumbers.push([emittedColumn, "unsigned"]);
+      emittedNumbers.push([relativeLine, "unsigned"]);
     } else {
-      emittedNumbers.push(emittedColumn);
+      emittedNumbers.push([emittedColumn, "unsigned"]);
     }
 
     this.#generatedState.line = line;

@@ -1,6 +1,6 @@
 {
   "tasks": {
-    "all": "deno -R src/main.ts --prefix --remaining --tag-split --tag-combined --tag-variables ./examples/simple.min.js.map ./examples/common.min.js.map ./examples/sdk.min.js.map ./examples/typescript.min.js.map"
+    "all": "deno -R src/main.ts --proposal --prefix --remaining --tag-split --tag-combined --tag-variables ./examples/simple.min.js.map ./examples/common.min.js.map ./examples/sdk.min.js.map ./examples/typescript.min.js.map"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1"

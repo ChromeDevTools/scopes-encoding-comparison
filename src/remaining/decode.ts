@@ -128,7 +128,7 @@ function* decodeOriginalScopeItems(
   let itemCount = 0;
 
   while (iter.hasNext()) {
-    const [line, column] = [iter.nextVLQ(), iter.nextUnsignedVLQ()];
+    const [line, column] = [iter.nextUnsignedVLQ(), iter.nextUnsignedVLQ()];
 
     if ((line & 0x1) > 0) {
       yield [itemCount++, { line: line >> 1, column }];
@@ -319,8 +319,8 @@ function* decodeGeneratedRangeItems(
   };
 
   while (iter.hasNext()) {
-    const emittedColumn = iter.nextVLQ();
-    const line = state.line + (emittedColumn & 0x1 ? iter.nextVLQ() : 0);
+    const emittedColumn = iter.nextUnsignedVLQ();
+    const line = state.line + (emittedColumn & 0x1 ? iter.nextUnsignedVLQ() : 0);
     state.column = (emittedColumn >> 2) +
       (line === state.line ? state.column : 0);
     state.line = line;

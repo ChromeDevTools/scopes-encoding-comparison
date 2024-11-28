@@ -133,7 +133,7 @@ function* decodeOriginalScopeItems(
       iter.next(); // Consume ','.
     }
 
-    const [line, column] = [iter.nextVLQ(), iter.nextVLQ()];
+    const [line, column] = [iter.nextUnsignedVLQ(), iter.nextUnsignedVLQ()];
     if (line === 0 && column < prevColumn) {
       // throw new Error('Malformed original scope encoding: start/end items must be ordered w.r.t. source positions ' + column + ' ' + prevColumn);
     }
@@ -147,7 +147,7 @@ function* decodeOriginalScopeItems(
     const startItem: EncodedOriginalScopeStart = {
       line,
       column,
-      flags: iter.nextVLQ(),
+      flags: iter.nextUnsignedVLQ(),
       variables: [],
     };
 
@@ -337,7 +337,7 @@ function* decodeGeneratedRangeItems(
       continue;
     }
 
-    state.column = iter.nextVLQ() + (line === state.line ? state.column : 0);
+    state.column = iter.nextUnsignedVLQ() + (line === state.line ? state.column : 0);
     state.line = line;
     if (iter.peekVLQ() === null) {
       yield { line, column: state.column };
@@ -347,7 +347,7 @@ function* decodeGeneratedRangeItems(
     const startItem: EncodedGeneratedRangeStart = {
       line,
       column: state.column,
-      flags: iter.nextVLQ(),
+      flags: iter.nextUnsignedVLQ(),
       bindings: [],
     };
 
