@@ -9,7 +9,7 @@ import {
   ScopeInfo,
   SourceMapJson,
 } from "../types.ts";
-import { encodeMixedVlqList, encodeVlqList, MixedVlqList } from "../vlq.ts";
+import { encodeMixedVlqList, MixedVlqList } from "../vlq.ts";
 
 export function encode(
   info: ScopeInfo,
@@ -148,10 +148,10 @@ export class OriginalScopeBuilder {
   end(line: number, column: number): this {
     const lineDiff = line - this.#lastLine;
     this.#lastLine = line;
-    this.#encodedScope += encodeMixedVlqList([(lineDiff << 1) | 0x1, [
-      column,
-      "unsigned",
-    ]]);
+    this.#encodedScope += encodeMixedVlqList([
+      [(lineDiff << 1) | 0x1, "unsigned"],
+      [ column, "unsigned"],
+    ]);
     this.#scopeCounter++;
 
     return this;
@@ -326,7 +326,7 @@ export class GeneratedRangeBuilder {
     this.#state.line = line;
     this.#state.column = column;
 
-    this.#encodedRange += encodeVlqList(emittedNumbers);
+    this.#encodedRange += encodeMixedVlqList(emittedNumbers);
 
     return this;
   }
