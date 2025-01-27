@@ -7,6 +7,7 @@ import { gzip } from "jsr:@deno-library/compress";
 import { compress } from "https://deno.land/x/brotli/mod.ts";
 
 import { CODEC as BaseCodec } from "./base/base.ts";
+import { CODEC as BaseNoSemicolonCodec } from "./base_no_semicolon/base_no_semicolon.ts";
 import { CODEC as ProposalCodec } from "./proposal/proposal.ts";
 import { CODEC as ProposalUnsignedCodec } from "./proposal_unsigned/proposal_unsigned.ts";
 import { CODEC as PrefixCodec } from "./prefix/prefix.ts";
@@ -42,6 +43,7 @@ if (import.meta.main) {
   const flags = parseArgs(Deno.args, {
     boolean: [
       "base",
+      "base-no-semicolon",
       "prefix",
       "verify",
       "proposal",
@@ -52,7 +54,7 @@ if (import.meta.main) {
       "tag-split-variables",
     ],
     string: ["sizes", "sizes-reference"],
-    default: { sizes: "scopes", "sizes-reference": "proposal" },
+    default: { sizes: "scopes", "sizes-reference": "base" },
   });
 
   if (flags._.length === 0) {
@@ -62,27 +64,26 @@ if (import.meta.main) {
     throw new Error("Valid values for 'sizes' are: 'scopes', 'map'");
   }
   if (
-    !["proposal", "no-scopes", "no-names"].includes(flags["sizes-reference"])
+    !["base", "no-scopes", "no-names"].includes(flags["sizes-reference"])
   ) {
     throw new Error(
-      "Valid values for 'sizes-reference' are: 'proposal', 'no-scopes', 'no-names'.",
+      "Valid values for 'sizes-reference' are: 'base', 'no-scopes', 'no-names'.",
     );
   }
-  if (flags.sizes === "scopes" && flags["sizes-reference"] !== "proposal") {
+  if (flags.sizes === "scopes" && flags["sizes-reference"] !== "base") {
     throw new Error(
       `--sizes-reference="${flags["sizes-reference"]}" requires --sizes=map`,
     );
   }
 
   const codecs: Codec[] = [];
-  if (flags.proposal) {
-    if (flags["sizes-reference"] !== "proposal") {
-      codecs.push(ProposalCodec);
-    }
-    codecs.push(ProposalUnsignedCodec);
-  }
   if (flags.base) {
-    codecs.push(BaseCodec);
+    if (flags["sizes-reference"] !== "base") {
+      codecs.push(BaseCodec);
+    }
+  }
+  if (flags["base-no-semicolon"]) {
+    codecs.push(BaseNoSemicolonCodec);
   }
   if (flags.prefix) {
     codecs.push(PrefixCodec);
@@ -117,7 +118,7 @@ if (import.meta.main) {
       ? StripScopesCodec
       : flags["sizes-reference"] === "no-names"
       ? StripNamesCodec
-      : ProposalCodec;
+      : BaseCodec;
   dumpCodecsInfo([referenceCodec, ...codecs]);
 
   const result: unknown[] = [];
@@ -127,14 +128,12 @@ if (import.meta.main) {
     const proposalMap = JSON.parse(content);
     const scopesInfo = ProposalCodec.decode(proposalMap);
 
-    const referenceMap = flags["sizes-reference"] !== "proposal"
-        ? referenceCodec.encode(scopesInfo, proposalMap)
-        : proposalMap;
+    const referenceMap = referenceCodec.encode(scopesInfo, proposalMap);
     const baseSizes = calculateMapSizes(referenceMap, undefined, filterSourceMapProps);
 
     const codecSizes = codecs.map((codec) => {
       const newMap = codec.encode(scopesInfo, referenceMap);
-      if (flags.verify) verifyCodec(codec, referenceMap, newMap);
+      if (flags.verify) verifyCodec(codec, newMap, referenceCodec, referenceMap);
       const sizes = calculateMapSizes(newMap, baseSizes, filterSourceMapProps);
       return { Codec: codec.name, ...formatMapSizes(sizes) };
     });
@@ -171,10 +170,11 @@ function dumpCodecInfo(codec: Codec) {
 
 function verifyCodec(
   codec: Codec,
-  initialMap: SourceMapJson,
   newMap: SourceMapJson,
+  referenceCodec: Codec,
+  referenceMap: SourceMapJson,
 ) {
-  const originalInfo = ProposalCodec.decode(initialMap);
+  const originalInfo = referenceCodec.decode(referenceMap);
   const decodedScopes = codec.decode(newMap);
 
   assertEquals(decodedScopes.scopes.length, originalInfo.scopes.length);
