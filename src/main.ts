@@ -6,8 +6,8 @@ import { parseArgs } from "jsr:@std/cli/parse-args";
 import { gzip } from "jsr:@deno-library/compress";
 import { compress } from "https://deno.land/x/brotli/mod.ts";
 
-import { CODEC as BaseCodec } from "./base/base.ts";
-import { CODEC as BaseNoSemicolonCodec } from "./base_no_semicolon/base_no_semicolon.ts";
+import { CODEC as BaseCodec } from "./base/codec.ts";
+import { CODEC as BaseNoSemicolonCodec } from "./base_no_semicolon/codec.ts";
 import { CODEC as ProposalCodec } from "./proposal/proposal.ts";
 import { CODEC as ProposalUnsignedCodec } from "./proposal_unsigned/proposal_unsigned.ts";
 import { CODEC as PrefixCodec } from "./prefix/prefix.ts";
