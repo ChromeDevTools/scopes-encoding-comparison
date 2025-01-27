@@ -6,6 +6,7 @@ import { parseArgs } from "jsr:@std/cli/parse-args";
 import { gzip } from "jsr:@deno-library/compress";
 import { compress } from "https://deno.land/x/brotli/mod.ts";
 
+import { CODEC as BaseCodec } from "./base/base.ts";
 import { CODEC as ProposalCodec } from "./proposal/proposal.ts";
 import { CODEC as ProposalUnsignedCodec } from "./proposal_unsigned/proposal_unsigned.ts";
 import { CODEC as PrefixCodec } from "./prefix/prefix.ts";
@@ -40,6 +41,7 @@ const formatDeltaPercent = deltaPercentFormatter.format.bind(
 if (import.meta.main) {
   const flags = parseArgs(Deno.args, {
     boolean: [
+      "base",
       "prefix",
       "verify",
       "proposal",
@@ -78,6 +80,9 @@ if (import.meta.main) {
       codecs.push(ProposalCodec);
     }
     codecs.push(ProposalUnsignedCodec);
+  }
+  if (flags.base) {
+    codecs.push(BaseCodec);
   }
   if (flags.prefix) {
     codecs.push(PrefixCodec);
