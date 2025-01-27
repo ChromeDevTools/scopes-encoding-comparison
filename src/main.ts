@@ -16,6 +16,8 @@ import { CODEC as StripNamesCodec } from "./strip_names/strip_names.ts";
 import { CODEC as StripScopesCodec } from "./strip_scopes/strip_scopes.ts";
 import { CODEC as TagSplitCodec } from "./tag_split/tag_split.ts";
 import { CODEC as TagSplitUnsignedCodec } from "./tag_split_unsigned/tag_split_unsigned.ts";
+import { CODEC as TagSplitVariablesCodec } from "./tag_split_variables/tag_split_variables.ts";
+import { CODEC as TagSplitVariablesUnsignedCodec } from "./tag_split_variables_unsigned/tag_split_variables_unsigned.ts";
 import { CODEC as TagCombinedCodec } from "./tag_combined/tag_combined.ts";
 import { CODEC as TagCombinedUnsignedCodec } from "./tag_combined_unsigned/tag_combined_unsigned.ts";
 import { CODEC as TagVariablesCodec } from "./tag_variables/tag_variables.ts";
@@ -45,6 +47,7 @@ if (import.meta.main) {
       "tag-split",
       "tag-combined",
       "tag-variables",
+      "tag-split-variables",
     ],
     string: ["sizes", "sizes-reference"],
     default: { sizes: "scopes", "sizes-reference": "proposal" },
@@ -95,6 +98,10 @@ if (import.meta.main) {
   if (flags["tag-variables"]) {
     codecs.push(TagVariablesCodec);
     codecs.push(TagVariablesUnsignedCodec);
+  }
+  if (flags["tag-split-variables"]) {
+    codecs.push(TagSplitVariablesCodec);
+    codecs.push(TagSplitVariablesUnsignedCodec);
   }
   const filterSourceMapProps: (keyof SourceMapJson)[] | undefined =
     flags.sizes === "scopes"
