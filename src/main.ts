@@ -12,7 +12,7 @@ import { CODEC as BaseTagAllCodec } from "./base_tag_all/codec.ts";
 import { CODEC as ProposalCodec } from "./proposal/proposal.ts";
 import { CODEC as StripNamesCodec } from "./strip_names/strip_names.ts";
 import { CODEC as StripScopesCodec } from "./strip_scopes/strip_scopes.ts";
-import { Codec, SourceMapJson } from "./types.ts";
+import { Codec, ScopeInfo, SourceMapJson } from "./types.ts";
 import { assertEquals } from "@std/assert";
 
 const formatter = new Intl.NumberFormat("en-US");
@@ -89,6 +89,7 @@ if (import.meta.main) {
     const content = Deno.readTextFileSync(file.toString());
     const proposalMap = JSON.parse(content);
     const scopesInfo = ProposalCodec.decode(proposalMap);
+    const referenceInfo = ProposalCodec.decode(proposalMap); // scopesInfo is updated with the definition symbol.
 
     // Use a stripped source map as the base to add scopes info.
     // This allows codecs to add names in a sane order for potential better encoding.
@@ -99,7 +100,7 @@ if (import.meta.main) {
 
     const codecSizes = codecs.map((codec) => {
       const newMap = codec.encode(scopesInfo, strippedMap);
-      if (flags.verify) verifyCodec(codec, newMap, referenceCodec, referenceMap);
+      if (flags.verify) verifyCodec(codec, newMap, referenceInfo);
       const sizes = calculateMapSizes(newMap, baseSizes, filterSourceMapProps);
       return { Codec: codec.name, ...formatMapSizes(sizes) };
     });
@@ -137,10 +138,8 @@ function dumpCodecInfo(codec: Codec) {
 function verifyCodec(
   codec: Codec,
   newMap: SourceMapJson,
-  referenceCodec: Codec,
-  referenceMap: SourceMapJson,
+  originalInfo: ScopeInfo,
 ) {
-  const originalInfo = referenceCodec.decode(referenceMap);
   const decodedScopes = codec.decode(newMap);
 
   assertEquals(decodedScopes.scopes.length, originalInfo.scopes.length);

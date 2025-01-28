@@ -50,6 +50,7 @@ function decodeOriginalScope(
   const scopeStack: OriginalScope[] = [];
   let line = 0;
   let kindIdx = 0;
+  let nameIdx = 0;
 
   for (const [index, item] of decodeOriginalScopeItems(encodedOriginalScope)) {
     line += item.line;
@@ -60,7 +61,11 @@ function decodeOriginalScope(
         kindIdx += item.kind;
         kind = resolveName(kindIdx, names);
       }
-      const name = resolveName(item.name, names);
+      let name: string | undefined = undefined;
+      if (item.name !== undefined) {
+        nameIdx += item.name;
+        name = resolveName(nameIdx, names);
+      }
       const variables = item.variables.map((idx) => names[idx]);
       const scope: OriginalScope = {
         start: { line, column },
