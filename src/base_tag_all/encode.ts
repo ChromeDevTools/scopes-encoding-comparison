@@ -117,7 +117,7 @@ class Builder {
     },
   ): this {
     let encodedScope = "";
-    encodedScope += encodeVlq(Tag.ORIGINAL_START);
+    encodedScope += encodeUnsignedVlq(Tag.ORIGINAL_START);
 
     const lineDiff = line - this.#scopeState.line;
     this.#scopeState.line = line;
@@ -153,7 +153,7 @@ class Builder {
       return this;
     }
 
-    let encodedVariables = encodeVlq(Tag.VARIABLES);
+    let encodedVariables = encodeUnsignedVlq(Tag.VARIABLES);
     encodedVariables += encodeMixedVlqList(
       variables.map((variable) => this.#nameIdx(variable)),
     );
@@ -164,7 +164,7 @@ class Builder {
 
   endOriginalScope(line: number, column: number): this {
     let encodedScope = "";
-    encodedScope += encodeVlq(Tag.ORIGINAL_END);
+    encodedScope += encodeUnsignedVlq(Tag.ORIGINAL_END);
 
     const lineDiff = line - this.#scopeState.line;
     this.#scopeState.line = line;
@@ -184,7 +184,7 @@ class Builder {
     callsite?: { sourceIdx: number; line: number; column: number };
   }): this {
     let encodedRange = "";
-    encodedRange += encodeVlq(Tag.GENERATED_START);
+    encodedRange += encodeUnsignedVlq(Tag.GENERATED_START);
 
     const relativeLine = line - this.#rangeState.line;
     const relativeColumn = column -
@@ -251,7 +251,7 @@ class Builder {
     if (!bs?.length) {
       return this;
     }
-    let encodedRange = encodeVlq(Tag.BINDINGS);
+    let encodedRange = encodeUnsignedVlq(Tag.BINDINGS);
     for (const bindings of bs) {
       if (bindings === undefined || typeof bindings === "string") {
         encodedRange += encodeVlq(this.#nameIdx(bindings));
@@ -286,7 +286,7 @@ class Builder {
 
   endRange(line: number, column: number): this {
     let encodedRange = "";
-    encodedRange += encodeVlq(Tag.GENERATED_END);
+    encodedRange += encodeUnsignedVlq(Tag.GENERATED_END);
 
     const relativeLine = line - this.#rangeState.line;
     const relativeColumn = column -

@@ -212,7 +212,7 @@ function* decodeScopeItems(encodedScopes: string): Generator<Item> {
       continue;
     }
 
-    const tag = iter.nextVLQ();
+    const tag = iter.nextUnsignedVLQ();
     if (tag === Tag.ORIGINAL_START) {
       const startItem: OriginalStartItem = {
         tag,
