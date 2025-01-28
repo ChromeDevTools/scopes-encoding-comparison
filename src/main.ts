@@ -11,21 +11,8 @@ import { CODEC as BaseNoSemicolonCodec } from "./base_no_semicolon/codec.ts";
 import { CODEC as BaseTagCodec} from "./base_tag/codec.ts";
 import { CODEC as BaseTagAllCodec } from "./base_tag_all/codec.ts";
 import { CODEC as ProposalCodec } from "./proposal/proposal.ts";
-import { CODEC as ProposalUnsignedCodec } from "./proposal_unsigned/proposal_unsigned.ts";
-import { CODEC as PrefixCodec } from "./prefix/prefix.ts";
-import { CODEC as PrefixUnsignedCodec } from "./prefix_unsigned/prefix_unsigned.ts";
-import { CODEC as RemainingCodec } from "./remaining/remaining.ts";
-import { CODEC as RemainingUnsignedCodec } from "./remaining_unsigned/remaining_unsigned.ts";
 import { CODEC as StripNamesCodec } from "./strip_names/strip_names.ts";
 import { CODEC as StripScopesCodec } from "./strip_scopes/strip_scopes.ts";
-import { CODEC as TagSplitCodec } from "./tag_split/tag_split.ts";
-import { CODEC as TagSplitUnsignedCodec } from "./tag_split_unsigned/tag_split_unsigned.ts";
-import { CODEC as TagSplitVariablesCodec } from "./tag_split_variables/tag_split_variables.ts";
-import { CODEC as TagSplitVariablesUnsignedCodec } from "./tag_split_variables_unsigned/tag_split_variables_unsigned.ts";
-import { CODEC as TagCombinedCodec } from "./tag_combined/tag_combined.ts";
-import { CODEC as TagCombinedUnsignedCodec } from "./tag_combined_unsigned/tag_combined_unsigned.ts";
-import { CODEC as TagVariablesCodec } from "./tag_variables/tag_variables.ts";
-import { CODEC as TagVariablesUnsignedCodec } from "./tag_variables_unsigned/tag_variables_unsigned.ts";
 import { Codec, SourceMapJson } from "./types.ts";
 import { assertEquals } from "@std/assert";
 
@@ -48,14 +35,7 @@ if (import.meta.main) {
       "base-no-semicolon",
       "base-tag",
       "base-tag-all",
-      "prefix",
       "verify",
-      "proposal",
-      "remaining",
-      "tag-split",
-      "tag-combined",
-      "tag-variables",
-      "tag-split-variables",
     ],
     string: ["sizes", "sizes-reference"],
     default: { sizes: "scopes", "sizes-reference": "base" },
@@ -95,30 +75,7 @@ if (import.meta.main) {
   if (flags["base-tag-all"]) {
     codecs.push(BaseTagAllCodec);
   }
-  if (flags.prefix) {
-    codecs.push(PrefixCodec);
-    codecs.push(PrefixUnsignedCodec);
-  }
-  if (flags.remaining) {
-    codecs.push(RemainingCodec);
-    codecs.push(RemainingUnsignedCodec);
-  }
-  if (flags["tag-split"]) {
-    codecs.push(TagSplitCodec);
-    codecs.push(TagSplitUnsignedCodec);
-  }
-  if (flags["tag-combined"]) {
-    codecs.push(TagCombinedCodec);
-    codecs.push(TagCombinedUnsignedCodec);
-  }
-  if (flags["tag-variables"]) {
-    codecs.push(TagVariablesCodec);
-    codecs.push(TagVariablesUnsignedCodec);
-  }
-  if (flags["tag-split-variables"]) {
-    codecs.push(TagSplitVariablesCodec);
-    codecs.push(TagSplitVariablesUnsignedCodec);
-  }
+
   const filterSourceMapProps: (keyof SourceMapJson)[] | undefined =
     flags.sizes === "scopes"
       ? ["originalScopes", "generatedRanges", "scopes"]
