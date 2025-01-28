@@ -95,11 +95,15 @@ if (import.meta.main) {
     const proposalMap = JSON.parse(content);
     const scopesInfo = ProposalCodec.decode(proposalMap);
 
-    const referenceMap = referenceCodec.encode(scopesInfo, proposalMap);
+    // Use a stripped source map as the base to add scopes info.
+    // This allows codecs to add names in a sane order for potential better encoding.
+    const strippedMap = StripScopesCodec.encode(scopesInfo, proposalMap);
+
+    const referenceMap = referenceCodec.encode(scopesInfo, strippedMap);
     const baseSizes = calculateMapSizes(referenceMap, undefined, filterSourceMapProps);
 
     const codecSizes = codecs.map((codec) => {
-      const newMap = codec.encode(scopesInfo, referenceMap);
+      const newMap = codec.encode(scopesInfo, strippedMap);
       if (flags.verify) verifyCodec(codec, newMap, referenceCodec, referenceMap);
       const sizes = calculateMapSizes(newMap, baseSizes, filterSourceMapProps);
       return { Codec: codec.name, ...formatMapSizes(sizes) };
