@@ -9,6 +9,7 @@ import { compress } from "https://deno.land/x/brotli/mod.ts";
 import { CODEC as BaseCodec } from "./base/codec.ts";
 import { CODEC as BaseNoSemicolonCodec } from "./base_no_semicolon/codec.ts";
 import { CODEC as BaseTagCodec} from "./base_tag/codec.ts";
+import { CODEC as BaseTagAllCodec } from "./base_tag_all/codec.ts";
 import { CODEC as ProposalCodec } from "./proposal/proposal.ts";
 import { CODEC as ProposalUnsignedCodec } from "./proposal_unsigned/proposal_unsigned.ts";
 import { CODEC as PrefixCodec } from "./prefix/prefix.ts";
@@ -46,6 +47,7 @@ if (import.meta.main) {
       "base",
       "base-no-semicolon",
       "base-tag",
+      "base-tag-all",
       "prefix",
       "verify",
       "proposal",
@@ -89,6 +91,9 @@ if (import.meta.main) {
   }
   if (flags["base-tag"]) {
     codecs.push(BaseTagCodec);
+  }
+  if (flags["base-tag-all"]) {
+    codecs.push(BaseTagAllCodec);
   }
   if (flags.prefix) {
     codecs.push(PrefixCodec);
