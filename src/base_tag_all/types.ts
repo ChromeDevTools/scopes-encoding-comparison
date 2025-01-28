@@ -10,3 +10,16 @@ export const enum Tag {
   VARIABLES = 0x5,
   BINDINGS = 0x6,
 }
+
+export const enum OriginalScopeFlag {
+  HAS_NAME = 0x1,
+  HAS_KIND = 0x2,
+  IS_STACK_FRAME = 0x4,
+}
+
+export const enum GeneratedRangeFlag {
+  HAS_DEFINITION = 0x1,
+  HAS_CALLSITE = 0x2,
+  IS_STACK_FRAME = 0x4,
+  IS_HIDDEN = 0x8,
+}

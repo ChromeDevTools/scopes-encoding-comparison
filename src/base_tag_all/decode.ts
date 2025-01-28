@@ -10,423 +10,285 @@ import {
   SourceMapJson,
 } from "../types.ts";
 import { TokenIterator } from "../vlq.ts";
-
-interface OriginalScopeTree {
-  readonly root: OriginalScope;
-  readonly scopeForItemIndex: Map<number, OriginalScope>;
-}
+import { GeneratedRangeFlag, OriginalScopeFlag, Tag } from "./types.ts";
 
 export function decode(map: SourceMapJson): ScopeInfo {
-  if (!map.names || !map.originalScopes || !map.generatedRanges) {
+  if (!map.names || !map.scopes) {
     throw new Error("Nothing to decode!");
   }
-
-  const scopeTrees = decodeOriginalScopes(map.originalScopes, map.names);
-  const ranges = decodeGeneratedRanges(
-    map.generatedRanges,
-    scopeTrees,
-    map.names,
-  );
-  return {
-    scopes: scopeTrees.map((tree) => tree.root),
-    ranges,
-  };
+ 
+  return decodeScopes(map.scopes, map.names);
 }
 
-function decodeOriginalScopes(
-  encodedOriginalScopes: string[],
-  names: string[],
-): OriginalScopeTree[] {
-  return encodedOriginalScopes.map((scope) =>
-    decodeOriginalScope(scope, names)
-  );
-}
-
-function decodeOriginalScope(
-  encodedOriginalScope: string,
-  names: string[],
-): OriginalScopeTree {
-  const scopeForItemIndex = new Map<number, OriginalScope>();
+function decodeScopes(scopes: string, names: string[]): ScopeInfo {
+  const itemForIndex = new Map<number, OriginalScope>();
   const scopeStack: OriginalScope[] = [];
-  let line = 0;
-  let kindIdx = 0;
-
-  for (const [index, item] of decodeOriginalScopeItems(encodedOriginalScope)) {
-    line += item.line;
-    const { column } = item;
-    if (isStart(item)) {
-      let kind: string | undefined;
-      if (item.kind !== undefined) {
-        kindIdx += item.kind;
-        kind = resolveName(kindIdx, names);
+  const scopeResult: OriginalScope[] = [];
+  const rangeStack: GeneratedRange[] = [];
+  const rangeResult: GeneratedRange[] = [];
+  const originalState = {
+    line: 0,
+    kind: 0,
+  };
+  const generatedState = {
+    line: 0,
+    column: 0,
+    defIdx: 0,
+    callsiteSourceIdx: 0,
+    callsiteLine: 0,
+    callsiteColumn: 0,
+  };
+  const rangeToStartItem = new Map<
+    GeneratedRange,
+    GeneratedStartItem
+  >();
+  
+  let itemIndex = 0;
+  for (const item of decodeScopeItems(scopes)) {
+    if (item.tag === Tag.ORIGINAL_START) {
+      originalState.line += item.line;
+      let kind: string | undefined = undefined;
+      if (item.kindIdx !== undefined) {
+        originalState.kind += item.kindIdx;
+        kind = resolveName(originalState.kind, names);
       }
-      const name = resolveName(item.name, names);
-      const variables = item.variables.map((idx) => names[idx]);
+      const name = resolveName(item.nameIdx, names);
       const scope: OriginalScope = {
-        start: { line, column },
-        end: { line, column },
+        start: { line: originalState.line, column: item.column },
+        end: { line: originalState.line, column: item.column },
         kind,
         name,
         isStackFrame: Boolean(
-          item.flags & EncodedOriginalScopeFlag.IS_STACK_FRAME,
+          item.flags & OriginalScopeFlag.IS_STACK_FRAME,
         ),
-        variables,
+        variables: [],
         children: [],
       };
       scopeStack.push(scope);
-      scopeForItemIndex.set(index, scope);
-    } else {
+      itemForIndex.set(itemIndex, scope);
+    } else if (item.tag === Tag.VARIABLES) {
+      const top = scopeStack.at(-1);
+      if (top) {
+        top.variables = item.variableIdxs.map((idx) => names[idx]);
+      } else {
+        throw new Error('Encountered "Variable" item outside of OriginalScope');
+      }
+    } else if (item.tag === Tag.ORIGINAL_END) {
+      originalState.line += item.line;
       const scope = scopeStack.pop();
       if (!scope) {
         throw new Error(
           'Scope items not nested properly: encountered "end" item without "start" item',
         );
       }
-      scope.end = { line, column };
+      scope.end = { line: originalState.line, column: item.column };
 
       if (scopeStack.length === 0) {
         // We are done. There might be more top-level scopes but we only allow one.
-        return { root: scope, scopeForItemIndex };
+        scopeResult.push(scope);
+        originalState.line = 0;
+        originalState.kind = 0;
+      } else {
+        // scope.parent = scopeStack[scopeStack.length - 1];
+        scopeStack[scopeStack.length - 1].children.push(scope);
       }
-      // scope.parent = scopeStack[scopeStack.length - 1];
-      scopeStack[scopeStack.length - 1].children.push(scope);
-    }
-  }
-  throw new Error("Malformed original scope encoding");
-}
+    } else if (item.tag === Tag.GENERATED_START) {
+      generatedState.line = generatedState.line + (item.line ?? 0);
+      generatedState.column = item.column + (item.line === undefined ? generatedState.column : 0);
 
-interface EncodedOriginalScopeStart {
-  line: number;
-  column: number;
-  flags: number;
-  name?: number;
-  kind?: number;
-  variables: number[];
-}
-
-export const enum EncodedOriginalScopeFlag {
-  HAS_NAME = 0x1,
-  HAS_KIND = 0x2,
-  IS_STACK_FRAME = 0x4,
-  HAS_VARIABLES = 0x8,
-}
-
-interface EncodedOriginalScopeEnd {
-  line: number;
-  column: number;
-}
-
-function isStart(
-  item: EncodedOriginalScopeStart | EncodedOriginalScopeEnd,
-): item is EncodedOriginalScopeStart {
-  return "flags" in item;
-}
-
-function* decodeOriginalScopeItems(
-  encodedOriginalScope: string,
-): Generator<[number, EncodedOriginalScopeStart | EncodedOriginalScopeEnd]> {
-  const iter = new TokenIterator(encodedOriginalScope);
-  let prevColumn = 0;
-  let itemCount = 0;
-
-  while (iter.hasNext()) {
-    if (iter.peek() === ",") {
-      iter.next(); // Consume ','.
-    }
-
-    const [_tag, line, column] = [iter.nextVLQ(), iter.nextUnsignedVLQ(), iter.nextUnsignedVLQ()];
-    if (line === 0 && column < prevColumn) {
-      // throw new Error('Malformed original scope encoding: start/end items must be ordered w.r.t. source positions ' + column + ' ' + prevColumn);
-    }
-    prevColumn = column;
-
-    if (!iter.hasNext() || iter.peek() === ",") {
-      yield [itemCount++, { line, column }];
-      continue;
-    }
-
-    const startItem: EncodedOriginalScopeStart = {
-      line,
-      column,
-      flags: iter.nextUnsignedVLQ(),
-      variables: [],
-    };
-
-    if (startItem.flags & EncodedOriginalScopeFlag.HAS_NAME) {
-      startItem.name = iter.nextVLQ();
-    }
-    if (startItem.flags & EncodedOriginalScopeFlag.HAS_KIND) {
-      startItem.kind = iter.nextVLQ();
-    }
-    if (startItem.flags & EncodedOriginalScopeFlag.HAS_VARIABLES) {
-      const count = iter.nextUnsignedVLQ();
-      for (let i = 0; i < count; ++i) {
-        startItem.variables.push(iter.nextVLQ());
-      }
-    }
-
-    yield [itemCount++, startItem];
-  }
-}
-
-export function decodeGeneratedRanges(
-  encodedGeneratedRange: string,
-  originalScopeTrees: OriginalScopeTree[],
-  names: string[],
-): GeneratedRange[] {
-  // We insert a pseudo range as there could be multiple top-level ranges and we need a root range those can be attached to.
-  const rangeStack: GeneratedRange[] = [{
-    start: { line: 0, column: 0 },
-    end: { line: 0, column: 0 },
-    isStackFrame: false,
-    isHidden: false,
-    children: [],
-    values: [],
-  }];
-  const rangeToStartItem = new Map<
-    GeneratedRange,
-    EncodedGeneratedRangeStart
-  >();
-
-  for (const item of decodeGeneratedRangeItems(encodedGeneratedRange)) {
-    if (isRangeStart(item)) {
       const range: GeneratedRange = {
-        start: { line: item.line, column: item.column },
-        end: { line: item.line, column: item.column },
+        start: { line: generatedState.line, column: generatedState.column },
+        end: { line: generatedState.line, column: generatedState.column },
         isStackFrame: Boolean(
-          item.flags & EncodedGeneratedRangeFlag.IS_STACK_FRAME,
+          item.flags & GeneratedRangeFlag.IS_STACK_FRAME,
         ),
-        isHidden: Boolean(item.flags & EncodedGeneratedRangeFlag.IS_HIDDEN),
+        isHidden: Boolean(item.flags & GeneratedRangeFlag.IS_HIDDEN),
         values: [],
         children: [],
       };
 
-      if (item.definition) {
-        const { scopeIdx, sourceIdx } = item.definition;
-        if (!originalScopeTrees[sourceIdx]) {
-          throw new Error("Invalid source index!");
-        }
-        const originalScope = originalScopeTrees[sourceIdx].scopeForItemIndex
-          .get(scopeIdx);
+      if (item.definitionIdx !== undefined) {
+        generatedState.defIdx += item.definitionIdx;
+        const originalScope = itemForIndex.get(generatedState.defIdx);
         if (!originalScope) {
           throw new Error("Invalid original scope index!");
         }
         range.originalScope = originalScope;
       }
 
-      if (item.callsite) {
-        const { sourceIdx, line, column } = item.callsite;
-        if (!originalScopeTrees[sourceIdx]) {
-          throw new Error("Invalid source index!");
-        }
-        range.callsite = {
-          sourceIndex: sourceIdx,
-          line,
-          column,
-        };
-      }
-
       rangeToStartItem.set(range, item);
       rangeStack.push(range);
-    } else {
+    } else if (item.tag === Tag.BINDINGS) {
+      const top = rangeStack.at(-1);
+      if (!top) {
+        throw new Error("Encountered bindings item outside of generated range!");
+      }
+      const values = item.bindingIdxs.map(idx => resolveName(idx, names));
+      top.values = values;
+    } else if (item.tag === Tag.GENERATED_END) {
+      generatedState.line = generatedState.line + (item.line ?? 0);
+      generatedState.column = item.column + (item.line === undefined ? generatedState.column : 0);
+
       const range = rangeStack.pop();
       if (!range) {
         throw new Error(
           'Range items not nested properly: encountered "end" item without "start" item',
         );
       }
-      range.end = { line: item.line, column: item.column };
-      resolveBindings(range, names, rangeToStartItem.get(range)?.bindings);
-      rangeStack[rangeStack.length - 1].children.push(range);
+      range.end = { line: generatedState.line, column: generatedState.column };
+
+      if (rangeStack.length === 0) {
+        generatedState.line = 0;
+        generatedState.column = 0;
+        generatedState.defIdx = 0;
+        rangeResult.push(range);
+      } else {
+        rangeStack[rangeStack.length - 1].children.push(range);
+      }
     }
+
+    ++itemIndex;
   }
 
-  if (rangeStack.length !== 1) {
-    throw new Error("Malformed generated range encoding");
-  }
-  return rangeStack[0].children;
+  return {
+    scopes: scopeResult,
+    ranges: rangeResult,
+  };
 }
 
-function resolveBindings(
-  range: GeneratedRange,
-  names: string[],
-  bindingsForAllVars: EncodedGeneratedRangeStart["bindings"] | undefined,
-): void {
-  if (bindingsForAllVars === undefined) {
-    return;
-  }
-
-  range.values = bindingsForAllVars.map((bindings) => {
-    if (bindings.length === 1) {
-      return resolveName(bindings[0].nameIdx, names);
-    }
-
-    const bindingRanges: BindingRange[] = bindings.map((binding) => ({
-      from: { line: binding.line, column: binding.column },
-      to: { line: binding.line, column: binding.column },
-      value: resolveName(binding.nameIdx, names),
-    }));
-    for (let i = 1; i < bindingRanges.length; ++i) {
-      bindingRanges[i - 1].to = { ...bindingRanges[i].from };
-    }
-    bindingRanges[bindingRanges.length - 1].to = { ...range.end };
-    return bindingRanges;
-  });
-}
-
-interface EncodedGeneratedRangeStart {
+interface OriginalStartItem {
+  tag: Tag.ORIGINAL_START;
   line: number;
   column: number;
   flags: number;
-  definition?: {
-    sourceIdx: number;
-    scopeIdx: number;
-  };
-  callsite?: {
-    sourceIdx: number;
-    line: number;
-    column: number;
-  };
-  bindings: {
-    line: number;
-    column: number;
-    nameIdx: number;
-  }[][];
+  nameIdx?: number;
+  kindIdx?: number;
 }
 
-interface EncodedGeneratedRangeEnd {
+interface OriginalEndItem {
+  tag: Tag.ORIGINAL_END;
   line: number;
   column: number;
 }
 
-export const enum EncodedGeneratedRangeFlag {
-  HAS_DEFINITION = 0x1,
-  HAS_CALLSITE = 0x2,
-  IS_STACK_FRAME = 0x4,
-  HAS_BINDINGS = 0x8,
-  IS_HIDDEN = 0x10,
+interface GeneratedStartItem {
+  tag: Tag.GENERATED_START;
+  line?: number;
+  column: number;
+  flags: number;
+  definitionIdx?: number;
 }
 
-function isRangeStart(
-  item: EncodedGeneratedRangeStart | EncodedGeneratedRangeEnd,
-): item is EncodedGeneratedRangeStart {
-  return "flags" in item;
+interface GeneratedEndItem {
+  tag: Tag.GENERATED_END;
+  line?: number;
+  column: number;
 }
 
-function* decodeGeneratedRangeItems(
-  encodedGeneratedRange: string,
-): Generator<EncodedGeneratedRangeStart | EncodedGeneratedRangeEnd> {
-  const iter = new TokenIterator(encodedGeneratedRange);
+interface VariablesItem {
+  tag: Tag.VARIABLES;
+  variableIdxs: number[],
+}
 
-  // The state are the fields of the last produced item, tracked because many
-  // are relative to the preceeding item.
-  const state = {
-    line: 0,
-    column: 0,
-    defSourceIdx: 0,
-    defScopeIdx: 0,
-    callsiteSourceIdx: 0,
-    callsiteLine: 0,
-    callsiteColumn: 0,
-  };
+interface BindingsItem {
+  tag: Tag.BINDINGS;
+  bindingIdxs: number[],
+}
 
+type Item = OriginalStartItem|OriginalEndItem|GeneratedStartItem|GeneratedEndItem|VariablesItem|BindingsItem;
+
+function* decodeScopeItems(encodedScopes: string): Generator<Item> {
+  const iter = new TokenIterator(encodedScopes);
+  
   while (iter.hasNext()) {
     if (iter.peek() === ",") {
       iter.next(); // Consume ','.
       continue;
     }
 
-    const _tag = iter.nextVLQ();
-    const emittedColumn = iter.nextUnsignedVLQ();
-    const line = state.line +
-      (emittedColumn & 0x1 ? iter.nextUnsignedVLQ() : 0);
-    state.column = (emittedColumn >> 1) +
-      (line === state.line ? state.column : 0);
-    state.line = line;
-
-    if (iter.peekVLQ() === null) {
-      yield { line, column: state.column };
-      continue;
-    }
-
-    const startItem: EncodedGeneratedRangeStart = {
-      line,
-      column: state.column,
-      flags: iter.nextUnsignedVLQ(),
-      bindings: [],
-    };
-
-    if (startItem.flags & EncodedGeneratedRangeFlag.HAS_DEFINITION) {
-      const sourceIdx = iter.nextVLQ();
-      const scopeIdx = iter.nextVLQ();
-      state.defScopeIdx = scopeIdx + (sourceIdx === 0 ? state.defScopeIdx : 0);
-      state.defSourceIdx += sourceIdx;
-      startItem.definition = {
-        sourceIdx: state.defSourceIdx,
-        scopeIdx: state.defScopeIdx,
+    const tag = iter.nextVLQ();
+    if (tag === Tag.ORIGINAL_START) {
+      const startItem: OriginalStartItem = {
+        tag,
+        line: iter.nextUnsignedVLQ(),
+        column: iter.nextUnsignedVLQ(),
+        flags: iter.nextUnsignedVLQ(),
       };
-    }
 
-    if (startItem.flags & EncodedGeneratedRangeFlag.HAS_CALLSITE) {
-      const sourceIdx = iter.nextVLQ();
-      const line = iter.nextVLQ();
-      const column = iter.nextVLQ();
-      state.callsiteColumn = column +
-        (line === 0 && sourceIdx === 0 ? state.callsiteColumn : 0);
-      state.callsiteLine = line + (sourceIdx === 0 ? state.callsiteLine : 0);
-      state.callsiteSourceIdx += sourceIdx;
-      startItem.callsite = {
-        sourceIdx: state.callsiteSourceIdx,
-        line: state.callsiteLine,
-        column: state.callsiteColumn,
-      };
-    }
-
-    let bindingsCount = 0;
-    if (startItem.flags & EncodedGeneratedRangeFlag.HAS_BINDINGS) {
-      bindingsCount = iter.nextUnsignedVLQ();
-    }
-
-    for (let i = 0; i < bindingsCount; ++i) {
-      const bindings: EncodedGeneratedRangeStart["bindings"][number] = [];
-      startItem.bindings.push(bindings);
-
-      const idxOrSubrangeCount = iter.nextVLQ();
-      if (idxOrSubrangeCount >= -1) {
-        // Variable is available under the same expression in the whole range, or it's unavailable in the whole range.
-        bindings.push({
-          line: startItem.line,
-          column: startItem.column,
-          nameIdx: idxOrSubrangeCount,
-        });
-        continue;
+      if (startItem.flags & OriginalScopeFlag.HAS_NAME) {
+        startItem.nameIdx = iter.nextVLQ();
+      }
+      if (startItem.flags & OriginalScopeFlag.HAS_KIND) {
+        startItem.kindIdx = iter.nextVLQ();
       }
 
-      // Variable is available under different expressions in this range or unavailable in parts of this range.
-      bindings.push({
-        line: startItem.line,
-        column: startItem.column,
-        nameIdx: iter.nextVLQ(),
-      });
-      const rangeCount = -idxOrSubrangeCount;
-      for (let i = 0; i < rangeCount - 1; ++i) {
-        // line, column, valueOffset
-        const line = iter.nextVLQ();
-        const column = iter.nextVLQ();
-        const nameIdx = iter.nextVLQ();
+      yield startItem;
+    } else if (tag === Tag.VARIABLES) {
+      const variablesItem: VariablesItem = {
+        tag,
+        variableIdxs: [],
+      };
 
-        const lastLine = bindings.at(-1)?.line ?? 0; // Only to make TS happy. `bindings` has one entry guaranteed.
-        const lastColumn = bindings.at(-1)?.column ?? 0; // Only to make TS happy. `bindings` has one entry guaranteed.
-
-        bindings.push({
-          line: line + lastLine,
-          column: column + (line === 0 ? lastColumn : 0),
-          nameIdx,
-        });
+      while (iter.peek() !== ",") {
+        variablesItem.variableIdxs.push(iter.nextVLQ());
       }
-    }
 
-    yield startItem;
+      yield variablesItem;
+    } else if (tag === Tag.ORIGINAL_END) {
+      const endItem: OriginalEndItem = {
+        tag,
+        line: iter.nextUnsignedVLQ(),
+        column: iter.nextUnsignedVLQ(),
+      };
+
+      yield endItem;
+    } else if (tag === Tag.GENERATED_START) {
+      const column = iter.nextUnsignedVLQ();
+      const line = (column & 0x1) ? iter.nextUnsignedVLQ() : undefined;
+
+      const startItem: GeneratedStartItem = {
+        tag,
+        line,
+        column: column >> 1,
+        flags: iter.nextUnsignedVLQ(),
+      };
+
+      if (startItem.flags & GeneratedRangeFlag.HAS_DEFINITION) {
+        startItem.definitionIdx = iter.nextVLQ();
+      }
+      if (startItem.flags & GeneratedRangeFlag.HAS_CALLSITE) {
+        throw new Error("Callsite decoding not implemented");
+      }
+
+      yield startItem;
+    } else if (tag === Tag.BINDINGS) {
+      const item: BindingsItem = {
+        tag,
+        bindingIdxs: [],
+      };
+      while (iter.peek() !== ",") {
+        const idx = iter.nextVLQ();
+        if (idx < -1) {
+          throw new Error("Binding sub-range decoding not implemented!");
+        }
+        item.bindingIdxs.push(idx);
+      }
+
+      yield item;
+    } else if (tag === Tag.GENERATED_END) {
+      const column = iter.nextUnsignedVLQ();
+      const line = (column & 0x1) ? iter.nextUnsignedVLQ() : undefined;
+
+      const item: GeneratedEndItem = {
+        tag,
+        line,
+        column: column >> 1,
+      };
+
+      yield item;
+    } else {
+      throw new Error(`Tag ${tag} not implemented!`);
+    }
   }
 }
 
