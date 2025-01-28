@@ -8,7 +8,7 @@ import { compress } from "https://deno.land/x/brotli/mod.ts";
 
 import { CODEC as BaseCodec } from "./base/codec.ts";
 import { CODEC as BaseNoSemicolonCodec } from "./base_no_semicolon/codec.ts";
-import { CODEC as BaseTagAllCodec } from "./base_tag_all/codec.ts";
+import { CODEC as BaseTagCodec } from "./base_tag/codec.ts";
 import { CODEC as ProposalCodec } from "./proposal/proposal.ts";
 import { CODEC as StripNamesCodec } from "./strip_names/strip_names.ts";
 import { CODEC as StripScopesCodec } from "./strip_scopes/strip_scopes.ts";
@@ -32,7 +32,7 @@ if (import.meta.main) {
     boolean: [
       "base",
       "base-no-semicolon",
-      "base-tag-all",
+      "base-tag",
       "verify",
     ],
     string: ["sizes", "sizes-reference"],
@@ -67,8 +67,8 @@ if (import.meta.main) {
   if (flags["base-no-semicolon"]) {
     codecs.push(BaseNoSemicolonCodec);
   }
-  if (flags["base-tag-all"]) {
-    codecs.push(BaseTagAllCodec);
+  if (flags["base-tag"]) {
+    codecs.push(BaseTagCodec);
   }
 
   const filterSourceMapProps: (keyof SourceMapJson)[] | undefined =

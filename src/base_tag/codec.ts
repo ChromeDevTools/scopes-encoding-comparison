@@ -8,7 +8,7 @@ import { decode } from "./decode.ts";
 import { encode } from "./encode.ts";
 
 export const CODEC: Codec = {
-  name: "Base (tag, all)",
+  name: "Base (tag)",
   description: `Same as "Base" but with various changes on top combined:
   * encode generated lines as VLQ rather than ";"
   * add a tag to signify items
