@@ -28,6 +28,7 @@ function decodeScopes(scopes: string, names: string[]): ScopeInfo {
   const rangeResult: GeneratedRange[] = [];
   const originalState = {
     line: 0,
+    name: 0,
     kind: 0,
   };
   const generatedState = {
@@ -52,7 +53,11 @@ function decodeScopes(scopes: string, names: string[]): ScopeInfo {
         originalState.kind += item.kindIdx;
         kind = resolveName(originalState.kind, names);
       }
-      const name = resolveName(item.nameIdx, names);
+      let name: string | undefined = undefined;
+      if (item.nameIdx !== undefined) {
+        originalState.name += item.nameIdx;
+        name = resolveName(originalState.name, names);
+      }
       const scope: OriginalScope = {
         start: { line: originalState.line, column: item.column },
         end: { line: originalState.line, column: item.column },
@@ -88,6 +93,7 @@ function decodeScopes(scopes: string, names: string[]): ScopeInfo {
         scopeResult.push(scope);
         originalState.line = 0;
         originalState.kind = 0;
+        originalState.name = 0;
       } else {
         // scope.parent = scopeStack[scopeStack.length - 1];
         scopeStack[scopeStack.length - 1].children.push(scope);

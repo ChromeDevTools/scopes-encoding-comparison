@@ -85,6 +85,7 @@ class Builder {
   readonly #names: string[];
   readonly #scopeState = {
     line: 0,
+    name: 0,
     kind: 0,
   };
 
@@ -125,11 +126,11 @@ class Builder {
 
     if (options?.name) {
       flags |= OriginalScopeFlag.HAS_NAME;
-      nameIdxAndKindIdx.push(this.#nameIdx(options.name));
+      nameIdxAndKindIdx.push(this.#encodeOriginalScopeName(options.name));
     }
     if (options?.kind) {
       flags |= OriginalScopeFlag.HAS_KIND;
-      nameIdxAndKindIdx.push(this.#encodeKind(options?.kind));
+      nameIdxAndKindIdx.push(this.#encodeKind(options.kind));
     }
     if (options?.isStackFrame) {
       flags |= OriginalScopeFlag.IS_STACK_FRAME;
@@ -310,6 +311,7 @@ class Builder {
   resetOriginalScopeState(): void {
     this.#scopeState.line = 0;
     this.#scopeState.kind = 0;
+    this.#scopeState.name = 0;
   }
 
   resetRangeState(): void {
@@ -333,6 +335,13 @@ class Builder {
     const kindIdx = this.#nameIdx(kind);
     const encodedIdx = kindIdx - this.#scopeState.kind;
     this.#scopeState.kind = kindIdx;
+    return encodedIdx;
+  }
+
+  #encodeOriginalScopeName(name: string): number {
+    const nameIdx = this.#nameIdx(name);
+    const encodedIdx = nameIdx - this.#scopeState.name;
+    this.#scopeState.name = nameIdx;
     return encodedIdx;
   }
 
