@@ -86,6 +86,7 @@ export class OriginalScopeBuilder {
   #encodedScope = "";
   #lastLine = 0;
   #lastKind = 0;
+  #lastName = 0;
   #scopeCounter = 0;
 
   readonly #names: string[];
@@ -120,11 +121,11 @@ export class OriginalScopeBuilder {
 
     if (options?.name) {
       flags |= 0x1;
-      nameIdxAndKindIdx.push(this.#nameIdx(options.name));
+      nameIdxAndKindIdx.push(this.#encodeName(options.name));
     }
     if (options?.kind) {
       flags |= 0x2;
-      nameIdxAndKindIdx.push(this.#encodeKind(options?.kind));
+      nameIdxAndKindIdx.push(this.#encodeKind(options.kind));
     }
     if (options?.isStackFrame) {
       flags |= 0x4;
@@ -179,6 +180,13 @@ export class OriginalScopeBuilder {
     const kindIdx = this.#nameIdx(kind);
     const encodedIdx = kindIdx - this.#lastKind;
     this.#lastKind = kindIdx;
+    return encodedIdx;
+  }
+
+  #encodeName(name: string): number {
+    const nameIdx = this.#nameIdx(name);
+    const encodedIdx = nameIdx - this.#lastName;
+    this.#lastName = nameIdx;
     return encodedIdx;
   }
 
