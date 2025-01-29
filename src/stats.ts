@@ -49,6 +49,20 @@ export class SizesStats {
     ]);
   }
 
+  logCsv(): void {
+    console.log("File,Codec,Uncompressed size,Δ,Compressed size (gzip),Δ,Compressed size (brotli),Δ");
+
+    for (const [file, perFileStats] of this.#stats) {
+      const baseSizes = this.#referenceSizes.get(file)!;
+      console.log(`${file},${this.#referenceCodecName},${baseSizes.raw},,${baseSizes.gzip},,${baseSizes.brotli},`);
+
+      for (const [codecName, sizes] of perFileStats) {
+        console.log(`${file},${codecName},${sizes.raw},${sizes.deltaRaw},${sizes.gzip},${sizes.deltaGzip},${sizes.brotli},${sizes.deltaBrotli}`);
+      }
+      console.log(",,,,,,,");
+    }
+  }
+
   #getOrCalculateRefSizes(file: string, referenceMap: SourceMapJson): MapSizes {
     let sizes = this.#referenceSizes.get(file);
     if (!sizes) {

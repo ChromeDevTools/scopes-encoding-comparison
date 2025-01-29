@@ -21,6 +21,7 @@ if (import.meta.main) {
       "base-no-semicolon",
       "base-tag",
       "verify",
+      "csv",
     ],
     string: ["sizes", "sizes-reference"],
     default: { sizes: "scopes", "sizes-reference": "base" },
@@ -89,8 +90,12 @@ if (import.meta.main) {
     }
   }
 
-  dumpCodecsInfo([referenceCodec, ...codecs]);
-  stats.logTable();
+  if (flags.csv) {
+    stats.logCsv();
+  } else {
+    dumpCodecsInfo([referenceCodec, ...codecs]);
+    stats.logTable();
+  }
 }
 
 function dumpCodecsInfo(codecs: Codec[]) {
