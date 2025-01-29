@@ -9,7 +9,7 @@ import {
   ScopeInfo,
   SourceMapJson,
 } from "../types.ts";
-import { encodeVlq, encodeMixedVlqList, encodeUnsignedVlq } from "../vlq.ts";
+import { encodeVlq, encodeMixedVlqList, encodeUnsignedVlq, EncoderWithStats } from "../vlq.ts";
 
 /**
  * Takes a SourceMap with "current proposal" scopes and re-encodes them using the "prefix" method.

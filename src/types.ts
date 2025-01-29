@@ -26,6 +26,8 @@ export interface Codec {
   encode(info: ScopeInfo, map: SourceMapJson): SourceMapJson;
 
   decode(map: SourceMapJson): ScopeInfo;
+
+  dumpVlqHistograms?(): void;
 }
 
 export interface ScopeInfo {

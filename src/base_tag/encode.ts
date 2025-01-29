@@ -117,31 +117,33 @@ class Builder {
     },
   ): this {
     let encodedScope = "";
-    encodedScope += encodeUnsignedVlq(Tag.ORIGINAL_START);
+    encodedScope += encodeUnsignedVlq(Tag.ORIGINAL_START, "tag");
 
     const lineDiff = line - this.#scopeState.line;
     this.#scopeState.line = line;
     let flags = 0;
-    const nameIdxAndKindIdx: number[] = [];
 
     if (options?.name) {
       flags |= OriginalScopeFlag.HAS_NAME;
-      nameIdxAndKindIdx.push(this.#encodeOriginalScopeName(options.name));
     }
     if (options?.kind) {
       flags |= OriginalScopeFlag.HAS_KIND;
-      nameIdxAndKindIdx.push(this.#encodeKind(options.kind));
     }
     if (options?.isStackFrame) {
       flags |= OriginalScopeFlag.IS_STACK_FRAME;
     }
 
-    encodedScope += encodeMixedVlqList([
-      [lineDiff, "unsigned"],
-      [column, "unsigned"],
-      [flags, "unsigned"],
-      ...nameIdxAndKindIdx,
-    ]);
+    encodedScope += encodeUnsignedVlq(lineDiff, "OriginalScope.start.line");
+    encodedScope += encodeUnsignedVlq(column, "OriginalScope.start.column");
+    encodedScope += encodeUnsignedVlq(flags, "OriginalScope.flags");
+
+    if (options?.name) {
+      encodedScope += encodeVlq(this.#encodeOriginalScopeName(options.name), "OriginalScope.name");
+    }
+
+    if (options?.kind) {
+      encodedScope += encodeVlq(this.#encodeKind(options.kind), "OriginalScope.kind");
+    }
 
     this.#encodedItems.push(encodedScope);
 
@@ -153,10 +155,10 @@ class Builder {
       return this;
     }
 
-    let encodedVariables = encodeUnsignedVlq(Tag.VARIABLES);
-    encodedVariables += encodeMixedVlqList(
-      variables.map((variable) => this.#nameIdx(variable)),
-    );
+    let encodedVariables = encodeUnsignedVlq(Tag.VARIABLES, "tag");
+    for (const variable of variables) {
+      encodedVariables += encodeVlq(this.#nameIdx(variable), "OriginalScope.variable");
+    }
 
     this.#encodedItems.push(encodedVariables);
     return this;
@@ -164,14 +166,14 @@ class Builder {
 
   endOriginalScope(line: number, column: number): this {
     let encodedScope = "";
-    encodedScope += encodeUnsignedVlq(Tag.ORIGINAL_END);
+    encodedScope += encodeUnsignedVlq(Tag.ORIGINAL_END, "tag");
 
     const lineDiff = line - this.#scopeState.line;
     this.#scopeState.line = line;
-    encodedScope += encodeMixedVlqList([
-      [lineDiff, "unsigned"],
-      [column, "unsigned"],
-    ]);
+
+    encodedScope += encodeUnsignedVlq(lineDiff, "OriginalScope.end.line");
+    encodedScope += encodeUnsignedVlq(column, "OriginalScope.end.column");
+  
     this.#encodedItems.push(encodedScope);
 
     return this;
@@ -184,7 +186,7 @@ class Builder {
     callsite?: { sourceIdx: number; line: number; column: number };
   }): this {
     let encodedRange = "";
-    encodedRange += encodeUnsignedVlq(Tag.GENERATED_START);
+    encodedRange += encodeUnsignedVlq(Tag.GENERATED_START, "tag");
 
     const relativeLine = line - this.#rangeState.line;
     const relativeColumn = column -
@@ -192,10 +194,10 @@ class Builder {
     let emittedColumn = relativeColumn << 1;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      encodedRange += encodeUnsignedVlq(emittedColumn);
-      encodedRange += encodeUnsignedVlq(relativeLine);
+      encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.start.column");
+      encodedRange += encodeUnsignedVlq(relativeLine, "GeneratedRange.start.line");
     } else {
-      encodedRange += encodeUnsignedVlq(emittedColumn);
+      encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.start.column");
     }
 
     this.#rangeState.line = line;
@@ -214,10 +216,10 @@ class Builder {
     if (options?.isHidden) {
       flags |= GeneratedRangeFlag.IS_HIDDEN;
     }
-    encodedRange += encodeUnsignedVlq(flags);
+    encodedRange += encodeUnsignedVlq(flags, "GeneratedRange.flags");
 
     if (options?.definition !== undefined) {
-      encodedRange += encodeVlq(options.definition - this.#rangeState.defScopeIdx);
+      encodedRange += encodeVlq(options.definition - this.#rangeState.defScopeIdx, "GeneratedRange.definition");
       this.#rangeState.defScopeIdx = options.definition;
     }
 
@@ -251,10 +253,10 @@ class Builder {
     if (!bs?.length) {
       return this;
     }
-    let encodedRange = encodeUnsignedVlq(Tag.BINDINGS);
+    let encodedRange = encodeUnsignedVlq(Tag.BINDINGS, "tag");
     for (const bindings of bs) {
       if (bindings === undefined || typeof bindings === "string") {
-        encodedRange += encodeVlq(this.#nameIdx(bindings));
+        encodedRange += encodeVlq(this.#nameIdx(bindings), "GeneratedRange.bindings.value");
         continue;
       }
 
@@ -286,7 +288,7 @@ class Builder {
 
   endRange(line: number, column: number): this {
     let encodedRange = "";
-    encodedRange += encodeUnsignedVlq(Tag.GENERATED_END);
+    encodedRange += encodeUnsignedVlq(Tag.GENERATED_END, "tag");
 
     const relativeLine = line - this.#rangeState.line;
     const relativeColumn = column -
@@ -294,10 +296,10 @@ class Builder {
     let emittedColumn = relativeColumn << 1;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      encodedRange += encodeUnsignedVlq(emittedColumn);
-      encodedRange += encodeUnsignedVlq(relativeLine);
+      encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.end.column");
+      encodedRange += encodeUnsignedVlq(relativeLine, "GeneratedRange.end.line");
     } else {
-      encodedRange += encodeUnsignedVlq(emittedColumn);
+      encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.end.column");
     }
     
     this.#rangeState.line = line;

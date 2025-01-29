@@ -44,14 +44,92 @@ const VLQ_BASE_SHIFT = 5;
 const VLQ_BASE_MASK = (1 << 5) - 1;
 const VLQ_CONTINUATION_MASK = 1 << 5;
 
-export function encodeVlq(n: number): string {
+/**
+ * This class tracks character count histograms while emitting VLQs.
+ */
+export class EncoderWithStats {
+  readonly #stats = new Map<string, number[]>();
+
+  encodeSignedVlq(n: number, label?: string): string {
+    const encoded = encodeVlqInternal(n);
+    this.#trackStats(label, n, encoded);
+    return encoded;
+  }
+
+  encodeUnsignedVlq(n: number, label?: string): string {
+    const encoded = unsignedSupportEnabled ? encodeUnsignedVlqInternal(n) : encodeVlqInternal(n);
+    this.#trackStats(label, n, encoded);
+    return encoded;
+  }
+
+  dumpVlqHistograms(): void {
+    // Trim trailing zeroes to reduce noise.
+    for (const histogram of this.#stats.values()) {
+      const lastValidIdx = histogram.findLastIndex(v => v !== 0);
+      histogram.length = lastValidIdx + 1;
+    }
+
+    const result: unknown[] = [];
+    const indicesWithValues = new Set<number>();
+    for (const [Label, stats] of this.#stats) {
+      const obj: any = { Label };
+      result.push(obj);
+
+      for (const [idx, value] of stats.entries()) {
+        if (value > 0) {
+          obj[`"${idx}"`] = value;
+          indicesWithValues.add(idx);
+        }
+      }
+    }
+    console.table(result, ["Label", ...[...indicesWithValues].toSorted((a, b) => a - b).map(x => `"${x}"`)]);
+  }
+
+  #trackStats(label: string|undefined, n: number, encoded: string): void {
+    const stats = this.#statsForLabel(label ?? "<unlabeled>");
+    const index = n === 0 ? 0 : encoded.length;
+    stats[index] += 1;
+  }
+
+  #statsForLabel(label: string): number[] {
+    let stats = this.#stats.get(label);
+    if (!stats) {
+      stats = new Array(20).fill(0);
+      this.#stats.set(label, stats);
+    }
+    return stats;
+  }
+}
+
+const DEFAULT = new EncoderWithStats();
+
+let currentEncoder = DEFAULT;
+
+export function withStatsEncoder<Args extends unknown[], Return>(
+  encoder: EncoderWithStats,
+  fn: (...args: Args) => Return,
+): (...args: Args) => Return {
+  return (...args: Args) => {
+    const backup = currentEncoder;
+    currentEncoder = encoder;
+    const result = fn(...args);
+    currentEncoder = backup;
+    return result;
+  };
+}
+
+export function encodeVlq(n: number, label?: string): string {
+  return currentEncoder.encodeSignedVlq(n, label);
+}
+
+export function encodeUnsignedVlq(n: number, label?: string): string {
+  return currentEncoder.encodeUnsignedVlq(n, label);
+}
+
+function encodeVlqInternal(n: number): string {
   // Set the sign bit as the least significant bit.
   n = n >= 0 ? 2 * n : 1 - 2 * n;
   return encodeUnsignedVlqInternal(n);
-}
-
-export function encodeUnsignedVlq(n: number): string {
-  return unsignedSupportEnabled ? encodeUnsignedVlqInternal(n) : encodeVlq(n);
 }
 
 function encodeUnsignedVlqInternal(n: number): string {
@@ -75,7 +153,7 @@ function encodeUnsignedVlqInternal(n: number): string {
 }
 
 export function encodeVlqList(list: number[]) {
-  return list.map(encodeVlq).join("");
+  return list.map(n => encodeVlq(n)).join("");
 }
 
 export type MixedVlqList = ([number, "signed" | "unsigned"] | number)[];

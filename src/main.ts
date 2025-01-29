@@ -22,6 +22,7 @@ if (import.meta.main) {
       "base-tag",
       "verify",
       "csv",
+      "vlq-histograms",
     ],
     string: ["sizes", "sizes-reference"],
     default: { sizes: "scopes", "sizes-reference": "base" },
@@ -95,6 +96,15 @@ if (import.meta.main) {
   } else {
     dumpCodecsInfo([referenceCodec, ...codecs]);
     stats.logTable();
+  }
+
+  if (flags["vlq-histograms"]) {
+    for (const codec of codecs) {
+      if (codec.dumpVlqHistograms) {
+        console.log(`\n==== VLQ Histograms for "${codec.name}" ====`);
+        codec.dumpVlqHistograms();
+      }
+    }
   }
 }
 
