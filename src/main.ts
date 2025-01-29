@@ -10,9 +10,18 @@ import { CODEC as BaseTagCodec } from "./base_tag/codec.ts";
 import { CODEC as ProposalCodec } from "./proposal/proposal.ts";
 import { CODEC as StripNamesCodec } from "./strip_names/strip_names.ts";
 import { CODEC as StripScopesCodec } from "./strip_scopes/strip_scopes.ts";
+import { CODEC as StripSourcesCodec } from "./strip_sources/codec.ts";
+import { CODEC as StripSourcesNamesCodec } from "./strip_sources_names/codec.ts";
 import { Codec, ScopeInfo, SourceMapJson } from "./types.ts";
 import { assertEquals } from "@std/assert";
 import { SizesStats } from "./stats.ts";
+
+const VALID_SIZES_REFERENCE = [
+  "no-scopes",
+  "no-names",
+  "no-sources",
+  "no-sources-names",
+];
 
 if (import.meta.main) {
   const flags = parseArgs(Deno.args, {
@@ -35,10 +44,12 @@ if (import.meta.main) {
     throw new Error("Valid values for 'sizes' are: 'scopes', 'map'");
   }
   if (
-    !["base", "no-scopes", "no-names"].includes(flags["sizes-reference"])
+    !["base", ...VALID_SIZES_REFERENCE].includes(flags["sizes-reference"])
   ) {
     throw new Error(
-      "Valid values for 'sizes-reference' are: 'base', 'no-scopes', 'no-names'.",
+      `Valid values for 'sizes-reference' are: ${
+        VALID_SIZES_REFERENCE.join(", ")
+      }`,
     );
   }
   if (flags.sizes === "scopes" && flags["sizes-reference"] !== "base") {
@@ -69,6 +80,10 @@ if (import.meta.main) {
     ? StripScopesCodec
     : flags["sizes-reference"] === "no-names"
     ? StripNamesCodec
+    : flags["sizes-reference"] === "no-sources"
+    ? StripSourcesCodec
+    : flags["sizes-reference"] === "no-sources-names"
+    ? StripSourcesNamesCodec
     : BaseCodec;
 
   const stats = new SizesStats(referenceCodec.name, filterSourceMapProps);
