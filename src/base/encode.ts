@@ -9,7 +9,12 @@ import {
   ScopeInfo,
   SourceMapJson,
 } from "../types.ts";
-import { encodeVlq, encodeMixedVlqList, encodeUnsignedVlq, EncoderWithStats } from "../vlq.ts";
+import {
+  encodeMixedVlqList,
+  EncoderWithStats,
+  encodeUnsignedVlq,
+  encodeVlq,
+} from "../vlq.ts";
 
 /**
  * Takes a SourceMap with "current proposal" scopes and re-encodes them using the "prefix" method.
@@ -142,7 +147,10 @@ export class OriginalScopeBuilder {
     ]);
 
     if (options?.variables?.length) {
-      this.#encodedScope += encodeMixedVlqList([[options.variables.length, "unsigned"]]);
+      this.#encodedScope += encodeMixedVlqList([[
+        options.variables.length,
+        "unsigned",
+      ]]);
       this.#encodedScope += encodeMixedVlqList(
         options.variables.map((variable) => this.#nameIdx(variable)),
       );

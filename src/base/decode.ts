@@ -346,7 +346,8 @@ function* decodeGeneratedRangeItems(
       continue;
     }
 
-    state.column = iter.nextUnsignedVLQ() + (line === state.line ? state.column : 0);
+    state.column = iter.nextUnsignedVLQ() +
+      (line === state.line ? state.column : 0);
     state.line = line;
     if (iter.peekVLQ() === null) {
       yield { line, column: state.column };

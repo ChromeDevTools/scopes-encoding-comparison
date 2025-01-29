@@ -66,10 +66,10 @@ if (import.meta.main) {
       : undefined;
 
   const referenceCodec = flags["sizes-reference"] === "no-scopes"
-      ? StripScopesCodec
-      : flags["sizes-reference"] === "no-names"
-      ? StripNamesCodec
-      : BaseCodec;
+    ? StripScopesCodec
+    : flags["sizes-reference"] === "no-names"
+    ? StripNamesCodec
+    : BaseCodec;
 
   const stats = new SizesStats(referenceCodec.name, filterSourceMapProps);
 

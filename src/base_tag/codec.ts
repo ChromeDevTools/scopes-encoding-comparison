@@ -3,7 +3,11 @@
 // found in the LICENSE file.
 
 import { Codec } from "../types.ts";
-import { EncoderWithStats, withStatsEncoder, withUnsignedSupportEnabled } from "../vlq.ts";
+import {
+  EncoderWithStats,
+  withStatsEncoder,
+  withUnsignedSupportEnabled,
+} from "../vlq.ts";
 import { decode } from "./decode.ts";
 import { encode } from "./encode.ts";
 

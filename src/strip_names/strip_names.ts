@@ -7,7 +7,8 @@ import { encode } from "./encode.ts";
 
 export const CODEC: Codec = {
   name: "Base (no scopes, no names)",
-  description: "Input source map without any scope information and mappings stripped of their name.",
+  description:
+    "Input source map without any scope information and mappings stripped of their name.",
   encode,
   decode: () => {
     throw new Error(

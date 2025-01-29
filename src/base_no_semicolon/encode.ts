@@ -9,7 +9,7 @@ import {
   ScopeInfo,
   SourceMapJson,
 } from "../types.ts";
-import { encodeVlq, encodeMixedVlqList, encodeUnsignedVlq } from "../vlq.ts";
+import { encodeMixedVlqList, encodeUnsignedVlq, encodeVlq } from "../vlq.ts";
 
 /**
  * Takes a SourceMap with "current proposal" scopes and re-encodes them using the "prefix" method.
@@ -131,22 +131,40 @@ export class OriginalScopeBuilder {
       flags |= 0x8;
     }
 
-    this.#encodedScope += encodeUnsignedVlq(lineDiff, "OriginalScope.start.line");
-    this.#encodedScope += encodeUnsignedVlq(column, "OriginalScope.start.column");
+    this.#encodedScope += encodeUnsignedVlq(
+      lineDiff,
+      "OriginalScope.start.line",
+    );
+    this.#encodedScope += encodeUnsignedVlq(
+      column,
+      "OriginalScope.start.column",
+    );
     this.#encodedScope += encodeUnsignedVlq(flags, "OriginalScope.flags");
 
     if (options?.name) {
-      this.#encodedScope += encodeVlq(this.#encodeName(options.name), "OriginalScope.name");
+      this.#encodedScope += encodeVlq(
+        this.#encodeName(options.name),
+        "OriginalScope.name",
+      );
     }
 
     if (options?.kind) {
-      this.#encodedScope += encodeVlq(this.#encodeKind(options.kind), "OriginalScope.kind");
+      this.#encodedScope += encodeVlq(
+        this.#encodeKind(options.kind),
+        "OriginalScope.kind",
+      );
     }
 
     if (options?.variables?.length) {
-      this.#encodedScope += encodeUnsignedVlq(options.variables.length, "OriginalScope.variableCount");
+      this.#encodedScope += encodeUnsignedVlq(
+        options.variables.length,
+        "OriginalScope.variableCount",
+      );
       for (const variable of options.variables) {
-        this.#encodedScope += encodeVlq(this.#nameIdx(variable), "OriginalScope.variable");
+        this.#encodedScope += encodeVlq(
+          this.#nameIdx(variable),
+          "OriginalScope.variable",
+        );
       }
     }
 
@@ -236,10 +254,19 @@ export class GeneratedRangeBuilder {
     let emittedColumn = relativeColumn << 1;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      this.#encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.start.column");
-      this.#encodedRange += encodeUnsignedVlq(relativeLine, "GeneratedRange.start.line");
+      this.#encodedRange += encodeUnsignedVlq(
+        emittedColumn,
+        "GeneratedRange.start.column",
+      );
+      this.#encodedRange += encodeUnsignedVlq(
+        relativeLine,
+        "GeneratedRange.start.line",
+      );
     } else {
-      this.#encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.start.column");
+      this.#encodedRange += encodeUnsignedVlq(
+        emittedColumn,
+        "GeneratedRange.start.column",
+      );
     }
 
     this.#state.line = line;
@@ -266,11 +293,17 @@ export class GeneratedRangeBuilder {
 
     if (options?.definition) {
       const { sourceIdx, scopeIdx } = options.definition;
-      this.#encodedRange += encodeVlq(sourceIdx - this.#state.defSourceIdx, "GeneratedRange.definition.sourceIdx");
+      this.#encodedRange += encodeVlq(
+        sourceIdx - this.#state.defSourceIdx,
+        "GeneratedRange.definition.sourceIdx",
+      );
 
       const emittedScopeIdx = scopeIdx -
         (this.#state.defSourceIdx === sourceIdx ? this.#state.defScopeIdx : 0);
-      this.#encodedRange += encodeVlq(emittedScopeIdx, "GeneratedRange.definition.scopeIdx");
+      this.#encodedRange += encodeVlq(
+        emittedScopeIdx,
+        "GeneratedRange.definition.scopeIdx",
+      );
 
       this.#state.defSourceIdx = sourceIdx;
       this.#state.defScopeIdx = scopeIdx;
@@ -298,12 +331,18 @@ export class GeneratedRangeBuilder {
     }
 
     if (options?.bindings?.length) {
-      this.#encodedRange += encodeUnsignedVlq(options.bindings.length, "GeneratedRange.bindingsCount");
+      this.#encodedRange += encodeUnsignedVlq(
+        options.bindings.length,
+        "GeneratedRange.bindingsCount",
+      );
     }
 
     for (const bindings of options?.bindings ?? []) {
       if (bindings === undefined || typeof bindings === "string") {
-        this.#encodedRange += encodeVlq(this.#nameIdx(bindings), "GeneratedRange.bindings.value");
+        this.#encodedRange += encodeVlq(
+          this.#nameIdx(bindings),
+          "GeneratedRange.bindings.value",
+        );
         continue;
       }
 
@@ -342,12 +381,21 @@ export class GeneratedRangeBuilder {
     let emittedColumn = relativeColumn << 1;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      this.#encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.end.column");
-      this.#encodedRange += encodeUnsignedVlq(relativeLine, "GeneratedRange.end.line");
+      this.#encodedRange += encodeUnsignedVlq(
+        emittedColumn,
+        "GeneratedRange.end.column",
+      );
+      this.#encodedRange += encodeUnsignedVlq(
+        relativeLine,
+        "GeneratedRange.end.line",
+      );
     } else {
-      this.#encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.end.column");
+      this.#encodedRange += encodeUnsignedVlq(
+        emittedColumn,
+        "GeneratedRange.end.column",
+      );
     }
-    
+
     this.#state.line = line;
     this.#state.column = column;
 

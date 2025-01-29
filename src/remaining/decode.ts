@@ -320,7 +320,8 @@ function* decodeGeneratedRangeItems(
 
   while (iter.hasNext()) {
     const emittedColumn = iter.nextUnsignedVLQ();
-    const line = state.line + (emittedColumn & 0x1 ? iter.nextUnsignedVLQ() : 0);
+    const line = state.line +
+      (emittedColumn & 0x1 ? iter.nextUnsignedVLQ() : 0);
     state.column = (emittedColumn >> 2) +
       (line === state.line ? state.column : 0);
     state.line = line;

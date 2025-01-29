@@ -9,7 +9,7 @@ import {
   ScopeInfo,
   SourceMapJson,
 } from "../types.ts";
-import { encodeVlq, encodeMixedVlqList, encodeUnsignedVlq } from "../vlq.ts";
+import { encodeMixedVlqList, encodeUnsignedVlq, encodeVlq } from "../vlq.ts";
 import { GeneratedRangeFlag, OriginalScopeFlag, Tag } from "./types.ts";
 
 /**
@@ -26,11 +26,11 @@ export function encode(
   }
 
   const builder = new Builder(names);
-  info.scopes.forEach(scope => {
+  info.scopes.forEach((scope) => {
     builder.resetOriginalScopeState();
     encodeOriginalScope(scope, builder);
   });
-  info.ranges.forEach(range => {
+  info.ranges.forEach((range) => {
     builder.resetRangeState();
     encodeGeneratedRange(range, builder);
   });
@@ -138,11 +138,17 @@ class Builder {
     encodedScope += encodeUnsignedVlq(flags, "OriginalScope.flags");
 
     if (options?.name) {
-      encodedScope += encodeVlq(this.#encodeOriginalScopeName(options.name), "OriginalScope.name");
+      encodedScope += encodeVlq(
+        this.#encodeOriginalScopeName(options.name),
+        "OriginalScope.name",
+      );
     }
 
     if (options?.kind) {
-      encodedScope += encodeVlq(this.#encodeKind(options.kind), "OriginalScope.kind");
+      encodedScope += encodeVlq(
+        this.#encodeKind(options.kind),
+        "OriginalScope.kind",
+      );
     }
 
     this.#encodedItems.push(encodedScope);
@@ -157,7 +163,10 @@ class Builder {
 
     let encodedVariables = encodeUnsignedVlq(Tag.VARIABLES, "tag");
     for (const variable of variables) {
-      encodedVariables += encodeVlq(this.#nameIdx(variable), "OriginalScope.variable");
+      encodedVariables += encodeVlq(
+        this.#nameIdx(variable),
+        "OriginalScope.variable",
+      );
     }
 
     this.#encodedItems.push(encodedVariables);
@@ -173,7 +182,7 @@ class Builder {
 
     encodedScope += encodeUnsignedVlq(lineDiff, "OriginalScope.end.line");
     encodedScope += encodeUnsignedVlq(column, "OriginalScope.end.column");
-  
+
     this.#encodedItems.push(encodedScope);
 
     return this;
@@ -194,10 +203,19 @@ class Builder {
     let emittedColumn = relativeColumn << 1;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.start.column");
-      encodedRange += encodeUnsignedVlq(relativeLine, "GeneratedRange.start.line");
+      encodedRange += encodeUnsignedVlq(
+        emittedColumn,
+        "GeneratedRange.start.column",
+      );
+      encodedRange += encodeUnsignedVlq(
+        relativeLine,
+        "GeneratedRange.start.line",
+      );
     } else {
-      encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.start.column");
+      encodedRange += encodeUnsignedVlq(
+        emittedColumn,
+        "GeneratedRange.start.column",
+      );
     }
 
     this.#rangeState.line = line;
@@ -219,7 +237,10 @@ class Builder {
     encodedRange += encodeUnsignedVlq(flags, "GeneratedRange.flags");
 
     if (options?.definition !== undefined) {
-      encodedRange += encodeVlq(options.definition - this.#rangeState.defScopeIdx, "GeneratedRange.definition");
+      encodedRange += encodeVlq(
+        options.definition - this.#rangeState.defScopeIdx,
+        "GeneratedRange.definition",
+      );
       this.#rangeState.defScopeIdx = options.definition;
     }
 
@@ -236,7 +257,9 @@ class Builder {
       encodedRange += encodeVlq(emittedLine);
 
       const emittedColumn = column -
-        (this.#rangeState.callsiteLine === line ? this.#rangeState.callsiteColumn : 0);
+        (this.#rangeState.callsiteLine === line
+          ? this.#rangeState.callsiteColumn
+          : 0);
       encodedRange += encodeVlq(emittedColumn);
 
       this.#rangeState.callsiteSourceIdx = sourceIdx;
@@ -249,14 +272,21 @@ class Builder {
     return this;
   }
 
-  bindings(bs: (string | undefined | BindingRange[])[]|undefined, line: number, column: number): this {
+  bindings(
+    bs: (string | undefined | BindingRange[])[] | undefined,
+    line: number,
+    column: number,
+  ): this {
     if (!bs?.length) {
       return this;
     }
     let encodedRange = encodeUnsignedVlq(Tag.BINDINGS, "tag");
     for (const bindings of bs) {
       if (bindings === undefined || typeof bindings === "string") {
-        encodedRange += encodeVlq(this.#nameIdx(bindings), "GeneratedRange.bindings.value");
+        encodedRange += encodeVlq(
+          this.#nameIdx(bindings),
+          "GeneratedRange.bindings.value",
+        );
         continue;
       }
 
@@ -296,12 +326,21 @@ class Builder {
     let emittedColumn = relativeColumn << 1;
     if (relativeLine !== 0) {
       emittedColumn |= 0x1;
-      encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.end.column");
-      encodedRange += encodeUnsignedVlq(relativeLine, "GeneratedRange.end.line");
+      encodedRange += encodeUnsignedVlq(
+        emittedColumn,
+        "GeneratedRange.end.column",
+      );
+      encodedRange += encodeUnsignedVlq(
+        relativeLine,
+        "GeneratedRange.end.line",
+      );
     } else {
-      encodedRange += encodeUnsignedVlq(emittedColumn, "GeneratedRange.end.column");
+      encodedRange += encodeUnsignedVlq(
+        emittedColumn,
+        "GeneratedRange.end.column",
+      );
     }
-    
+
     this.#rangeState.line = line;
     this.#rangeState.column = column;
 

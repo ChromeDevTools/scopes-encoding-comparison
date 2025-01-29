@@ -125,7 +125,9 @@ function decodeScopes(encodedScopes: string, names: string[]): ScopeInfo {
         rangeStack[rangeStack.length - 1].children.push(range);
       }
     } else if (item.tag === Tag.BINDINGS) {
-      const startItem = rangeToStartItem.get(rangeStack.at(-1) as GeneratedRange);
+      const startItem = rangeToStartItem.get(
+        rangeStack.at(-1) as GeneratedRange,
+      );
       startItem!.bindings = item.bindings;
     }
   }

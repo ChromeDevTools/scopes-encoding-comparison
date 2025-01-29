@@ -13,12 +13,20 @@ export class SizesStats {
   readonly #filterSourceMapProps?: (keyof SourceMapJson)[];
   readonly #referenceCodecName: string;
 
-  constructor(referenceCodecName: string, filterSourceMapProps?: (keyof SourceMapJson)[]) {
+  constructor(
+    referenceCodecName: string,
+    filterSourceMapProps?: (keyof SourceMapJson)[],
+  ) {
     this.#referenceCodecName = referenceCodecName;
     this.#filterSourceMapProps = filterSourceMapProps;
   }
 
-  addMap(map: SourceMapJson, referenceMap: SourceMapJson, file: string, codecName: string): void {
+  addMap(
+    map: SourceMapJson,
+    referenceMap: SourceMapJson,
+    file: string,
+    codecName: string,
+  ): void {
     const referenceSizes = this.#getOrCalculateRefSizes(file, referenceMap);
     const sizes = this.#calculateMapSizes(map, referenceSizes);
     const perFileStats = this.#perFileStats(file);
@@ -30,9 +38,12 @@ export class SizesStats {
 
     for (const [file, perFileStats] of this.#stats) {
       result.push({ File: file });
-      result.push({ Codec: this.#referenceCodecName, ...formatMapSizes(this.#referenceSizes.get(file)!)})
+      result.push({
+        Codec: this.#referenceCodecName,
+        ...formatMapSizes(this.#referenceSizes.get(file)!),
+      });
       for (const [codecName, sizes] of perFileStats) {
-        result.push( { Codec: codecName, ...formatMapSizes(sizes)});
+        result.push({ Codec: codecName, ...formatMapSizes(sizes) });
       }
       result.push({});
     }
@@ -50,14 +61,20 @@ export class SizesStats {
   }
 
   logCsv(): void {
-    console.log("File,Codec,Uncompressed size,Δ,Compressed size (gzip),Δ,Compressed size (brotli),Δ");
+    console.log(
+      "File,Codec,Uncompressed size,Δ,Compressed size (gzip),Δ,Compressed size (brotli),Δ",
+    );
 
     for (const [file, perFileStats] of this.#stats) {
       const baseSizes = this.#referenceSizes.get(file)!;
-      console.log(`${file},${this.#referenceCodecName},${baseSizes.raw},,${baseSizes.gzip},,${baseSizes.brotli},`);
+      console.log(
+        `${file},${this.#referenceCodecName},${baseSizes.raw},,${baseSizes.gzip},,${baseSizes.brotli},`,
+      );
 
       for (const [codecName, sizes] of perFileStats) {
-        console.log(`${file},${codecName},${sizes.raw},${sizes.deltaRaw},${sizes.gzip},${sizes.deltaGzip},${sizes.brotli},${sizes.deltaBrotli}`);
+        console.log(
+          `${file},${codecName},${sizes.raw},${sizes.deltaRaw},${sizes.gzip},${sizes.deltaGzip},${sizes.brotli},${sizes.deltaBrotli}`,
+        );
       }
       console.log(",,,,,,,");
     }
@@ -81,23 +98,32 @@ export class SizesStats {
     return map;
   }
 
-  #calculateMapSizes(map: SourceMapJson, referenceSizes: MapSizes|undefined): MapSizes {
+  #calculateMapSizes(
+    map: SourceMapJson,
+    referenceSizes: MapSizes | undefined,
+  ): MapSizes {
     const encoder = new TextEncoder();
     const mapToStringify = this.#filterSourceMapProps
       ? this.#filterSourceMapProps.reduce((obj, key) => {
-          obj[key] = map[key];
-          return obj;
-        }, {} as any)
+        obj[key] = map[key];
+        return obj;
+      }, {} as any)
       : map;
     const data = encoder.encode(JSON.stringify(mapToStringify));
     const gzipData = gzip(data);
     const brotliData = compress(data);
-  
+
     const delta = (old: number, ne: number) => (ne - old) / old;
-    const deltaRaw = referenceSizes ? delta(referenceSizes.raw, data.length) : undefined;
-    const deltaGzip = referenceSizes ? delta(referenceSizes.gzip, gzipData.length) : undefined;
-    const deltaBrotli = referenceSizes ? delta(referenceSizes.brotli, brotliData.length) : undefined;
-  
+    const deltaRaw = referenceSizes
+      ? delta(referenceSizes.raw, data.length)
+      : undefined;
+    const deltaGzip = referenceSizes
+      ? delta(referenceSizes.gzip, gzipData.length)
+      : undefined;
+    const deltaBrotli = referenceSizes
+      ? delta(referenceSizes.brotli, brotliData.length)
+      : undefined;
+
     return {
       raw: data.length,
       gzip: gzipData.length,

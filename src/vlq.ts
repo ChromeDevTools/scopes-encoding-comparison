@@ -57,7 +57,9 @@ export class EncoderWithStats {
   }
 
   encodeUnsignedVlq(n: number, label?: string): string {
-    const encoded = unsignedSupportEnabled ? encodeUnsignedVlqInternal(n) : encodeVlqInternal(n);
+    const encoded = unsignedSupportEnabled
+      ? encodeUnsignedVlqInternal(n)
+      : encodeVlqInternal(n);
     this.#trackStats(label, n, encoded);
     return encoded;
   }
@@ -65,7 +67,7 @@ export class EncoderWithStats {
   dumpVlqHistograms(): void {
     // Trim trailing zeroes to reduce noise.
     for (const histogram of this.#stats.values()) {
-      const lastValidIdx = histogram.findLastIndex(v => v !== 0);
+      const lastValidIdx = histogram.findLastIndex((v) => v !== 0);
       histogram.length = lastValidIdx + 1;
     }
 
@@ -82,10 +84,13 @@ export class EncoderWithStats {
         }
       }
     }
-    console.table(result, ["Label", ...[...indicesWithValues].toSorted((a, b) => a - b).map(x => `"${x}"`)]);
+    console.table(result, [
+      "Label",
+      ...[...indicesWithValues].toSorted((a, b) => a - b).map((x) => `"${x}"`),
+    ]);
   }
 
-  #trackStats(label: string|undefined, n: number, encoded: string): void {
+  #trackStats(label: string | undefined, n: number, encoded: string): void {
     const stats = this.#statsForLabel(label ?? "<unlabeled>");
     const index = n === 0 ? 0 : encoded.length;
     stats[index] += 1;
@@ -153,7 +158,7 @@ function encodeUnsignedVlqInternal(n: number): string {
 }
 
 export function encodeVlqList(list: number[]) {
-  return list.map(n => encodeVlq(n)).join("");
+  return list.map((n) => encodeVlq(n)).join("");
 }
 
 export type MixedVlqList = ([number, "signed" | "unsigned"] | number)[];

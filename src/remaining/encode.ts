@@ -150,7 +150,7 @@ export class OriginalScopeBuilder {
     this.#lastLine = line;
     this.#encodedScope += encodeMixedVlqList([
       [(lineDiff << 1) | 0x1, "unsigned"],
-      [ column, "unsigned"],
+      [column, "unsigned"],
     ]);
     this.#scopeCounter++;
 

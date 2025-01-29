@@ -16,7 +16,7 @@ export function decode(map: SourceMapJson): ScopeInfo {
   if (!map.names || !map.scopes) {
     throw new Error("Nothing to decode!");
   }
- 
+
   return decodeScopes(map.scopes, map.names);
 }
 
@@ -43,7 +43,7 @@ function decodeScopes(scopes: string, names: string[]): ScopeInfo {
     GeneratedRange,
     GeneratedStartItem
   >();
-  
+
   let itemIndex = 0;
   for (const item of decodeScopeItems(scopes)) {
     if (item.tag === Tag.ORIGINAL_START) {
@@ -100,7 +100,8 @@ function decodeScopes(scopes: string, names: string[]): ScopeInfo {
       }
     } else if (item.tag === Tag.GENERATED_START) {
       generatedState.line = generatedState.line + (item.line ?? 0);
-      generatedState.column = item.column + (item.line === undefined ? generatedState.column : 0);
+      generatedState.column = item.column +
+        (item.line === undefined ? generatedState.column : 0);
 
       const range: GeneratedRange = {
         start: { line: generatedState.line, column: generatedState.column },
@@ -127,13 +128,16 @@ function decodeScopes(scopes: string, names: string[]): ScopeInfo {
     } else if (item.tag === Tag.BINDINGS) {
       const top = rangeStack.at(-1);
       if (!top) {
-        throw new Error("Encountered bindings item outside of generated range!");
+        throw new Error(
+          "Encountered bindings item outside of generated range!",
+        );
       }
-      const values = item.bindingIdxs.map(idx => resolveName(idx, names));
+      const values = item.bindingIdxs.map((idx) => resolveName(idx, names));
       top.values = values;
     } else if (item.tag === Tag.GENERATED_END) {
       generatedState.line = generatedState.line + (item.line ?? 0);
-      generatedState.column = item.column + (item.line === undefined ? generatedState.column : 0);
+      generatedState.column = item.column +
+        (item.line === undefined ? generatedState.column : 0);
 
       const range = rangeStack.pop();
       if (!range) {
@@ -193,19 +197,25 @@ interface GeneratedEndItem {
 
 interface VariablesItem {
   tag: Tag.VARIABLES;
-  variableIdxs: number[],
+  variableIdxs: number[];
 }
 
 interface BindingsItem {
   tag: Tag.BINDINGS;
-  bindingIdxs: number[],
+  bindingIdxs: number[];
 }
 
-type Item = OriginalStartItem|OriginalEndItem|GeneratedStartItem|GeneratedEndItem|VariablesItem|BindingsItem;
+type Item =
+  | OriginalStartItem
+  | OriginalEndItem
+  | GeneratedStartItem
+  | GeneratedEndItem
+  | VariablesItem
+  | BindingsItem;
 
 function* decodeScopeItems(encodedScopes: string): Generator<Item> {
   const iter = new TokenIterator(encodedScopes);
-  
+
   while (iter.hasNext()) {
     if (iter.peek() === ",") {
       iter.next(); // Consume ','.
