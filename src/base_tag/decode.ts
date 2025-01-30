@@ -259,14 +259,15 @@ function* decodeScopeItems(encodedScopes: string): Generator<Item> {
 
       yield endItem;
     } else if (tag === Tag.GENERATED_START) {
+      const flags = iter.nextUnsignedVLQ();
+      const line = (flags & GeneratedRangeFlag.HAS_LINE) ? iter.nextUnsignedVLQ() : undefined;
       const column = iter.nextUnsignedVLQ();
-      const line = (column & 0x1) ? iter.nextUnsignedVLQ() : undefined;
 
       const startItem: GeneratedStartItem = {
         tag,
         line,
-        column: column >> 1,
-        flags: iter.nextUnsignedVLQ(),
+        column,
+        flags,
       };
 
       if (startItem.flags & GeneratedRangeFlag.HAS_DEFINITION) {
@@ -293,12 +294,12 @@ function* decodeScopeItems(encodedScopes: string): Generator<Item> {
       yield item;
     } else if (tag === Tag.GENERATED_END) {
       const column = iter.nextUnsignedVLQ();
-      const line = (column & 0x1) ? iter.nextUnsignedVLQ() : undefined;
+      const line = (iter.hasNext() && iter.peek() !== ",") ? iter.nextUnsignedVLQ() : undefined;
 
       const item: GeneratedEndItem = {
         tag,
         line,
-        column: column >> 1,
+        column,
       };
 
       yield item;

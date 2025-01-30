@@ -198,29 +198,6 @@ class Builder {
     encodedRange += encodeUnsignedVlq(Tag.GENERATED_START, "tag");
 
     const relativeLine = line - this.#rangeState.line;
-    const relativeColumn = column -
-      (relativeLine === 0 ? this.#rangeState.column : 0);
-    let emittedColumn = relativeColumn << 1;
-    if (relativeLine !== 0) {
-      emittedColumn |= 0x1;
-      encodedRange += encodeUnsignedVlq(
-        emittedColumn,
-        "GeneratedRange.start.column",
-      );
-      encodedRange += encodeUnsignedVlq(
-        relativeLine,
-        "GeneratedRange.start.line",
-      );
-    } else {
-      encodedRange += encodeUnsignedVlq(
-        emittedColumn,
-        "GeneratedRange.start.column",
-      );
-    }
-
-    this.#rangeState.line = line;
-    this.#rangeState.column = column;
-
     let flags = 0;
     if (options?.definition !== undefined) {
       flags |= GeneratedRangeFlag.HAS_DEFINITION;
@@ -234,7 +211,20 @@ class Builder {
     if (options?.isHidden) {
       flags |= GeneratedRangeFlag.IS_HIDDEN;
     }
+    if (relativeLine > 0) {
+      flags |= GeneratedRangeFlag.HAS_LINE;
+    }
     encodedRange += encodeUnsignedVlq(flags, "GeneratedRange.flags");
+    if (relativeLine > 0) {
+      encodedRange += encodeUnsignedVlq(relativeLine, "GeneratedRange.start.line");
+    }
+    
+    const relativeColumn = column -
+      (relativeLine === 0 ? this.#rangeState.column : 0);
+    encodedRange += encodeUnsignedVlq(relativeColumn, "GeneratedRange.start.column");
+
+    this.#rangeState.line = line;
+    this.#rangeState.column = column;
 
     if (options?.definition !== undefined) {
       encodedRange += encodeVlq(
@@ -323,22 +313,9 @@ class Builder {
     const relativeLine = line - this.#rangeState.line;
     const relativeColumn = column -
       (relativeLine === 0 ? this.#rangeState.column : 0);
-    let emittedColumn = relativeColumn << 1;
-    if (relativeLine !== 0) {
-      emittedColumn |= 0x1;
-      encodedRange += encodeUnsignedVlq(
-        emittedColumn,
-        "GeneratedRange.end.column",
-      );
-      encodedRange += encodeUnsignedVlq(
-        relativeLine,
-        "GeneratedRange.end.line",
-      );
-    } else {
-      encodedRange += encodeUnsignedVlq(
-        emittedColumn,
-        "GeneratedRange.end.column",
-      );
+    encodedRange += encodeUnsignedVlq(relativeColumn, "GeneratedRange.end.column");
+    if (relativeLine > 0) {
+      encodedRange += encodeUnsignedVlq(relativeLine, "GeneratedRange.end.line");
     }
 
     this.#rangeState.line = line;

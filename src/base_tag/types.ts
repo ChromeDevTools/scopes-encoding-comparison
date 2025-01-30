@@ -7,8 +7,9 @@ export const enum Tag {
   ORIGINAL_END = 0x2,
   GENERATED_START = 0x3,
   GENERATED_END = 0x4,
-  VARIABLES = 0x5,
-  BINDINGS = 0x6,
+  GENERATED_END_WITH_LINE = 0x5,
+  VARIABLES = 0x6,
+  BINDINGS = 0x7,
 }
 
 export const enum OriginalScopeFlag {
@@ -18,8 +19,9 @@ export const enum OriginalScopeFlag {
 }
 
 export const enum GeneratedRangeFlag {
-  HAS_DEFINITION = 0x1,
-  HAS_CALLSITE = 0x2,
+  HAS_LINE = 0x1,
+  HAS_DEFINITION = 0x2,
   IS_STACK_FRAME = 0x4,
   IS_HIDDEN = 0x8,
+  HAS_CALLSITE = 0x10,
 }
