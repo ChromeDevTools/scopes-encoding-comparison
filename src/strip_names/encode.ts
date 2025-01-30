@@ -34,6 +34,5 @@ export function encode(
   const tmpMap = generator.toJSON();
   map.names = tmpMap.names;
   map.mappings = tmpMap.mappings;
-  console.info(map.names);
   return map;
 }
